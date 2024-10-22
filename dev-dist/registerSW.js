@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/lift-mate/dev-sw.js?dev-sw', { scope: '/lift-mate/', type: 'classic' })
