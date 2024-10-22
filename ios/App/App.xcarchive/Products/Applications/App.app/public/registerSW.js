@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/lift-mate/sw.js', { scope: '/lift-mate/' })})}
