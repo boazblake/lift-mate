@@ -53,6 +53,7 @@
 	<string>We need access to your photo library to save workout images or videos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to load images or videos for workout analysis.</string>
-
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone to record audio as part of the video capture.</string>
 </dict>
 </plist>

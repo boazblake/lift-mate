@@ -53,16 +53,27 @@ export default defineConfig(({ mode }) => {
     server:
       isDev || isSSL
         ? {
-            port: 8101, // Specify the port here
-            strictPort: true, // Ensures that Vite fails if the port is unavailable
-            https: {
-              key: fs.readFileSync("./.cert/key.pem"),
-              cert: fs.readFileSync("./.cert/cert.pem"),
-            },
-          }
-        : {
-            port: 8101, // Specify the port here
-            strictPort: true, // Ensures that Vite fails if the port is unavailable
+          port: 8101, // Specify the port here
+          strictPort: true, // Ensures that Vite fails if the port is unavailable
+          https: {
+            key: fs.readFileSync("./.cert/key.pem"),
+            cert: fs.readFileSync("./.cert/cert.pem"),
           },
+        }
+        : {
+          port: 8101, // Specify the port here
+          strictPort: true, // Ensures that Vite fails if the port is unavailable
+        },
+    optimizeDeps: {
+      exclude: [
+        "@ionic/core", // You can also add other Ionic components here if needed
+        "ion-menu",
+        "ion-tab-bar",
+        "ion-tab",
+        "ion-item",
+        "ion-button",
+        "ion-app",
+      ],
+    },
   };
 });

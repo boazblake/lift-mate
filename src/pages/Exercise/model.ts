@@ -4,10 +4,14 @@ import {
   FilesetResolver,
   DrawingUtils,
 } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
+import {
+  CameraPreview,
+  CameraPreviewOptions,
+} from "@capacitor-community/camera-preview";
+import { Capacitor } from "@capacitor/core";
 
 // State management using Mithril Streams
 export const appState = Stream("Pre"); // Pre or Streaming state
-export const webcamRunning = Stream(false);
 let poseLandmarker: any;
 
 // Function to start pose detection
@@ -21,7 +25,7 @@ export const startDetection = async (
       canvasElement,
       onResults(canvasElement)
     ); // Initialize pose detection before starting the video
-    await startVideoFeed(videoElement); // Start video feed after pose detection is initialized
+    await startCamera(videoElement, canvasElement); // Start video feed after pose detection is initialized
   } else {
     // If in Retake state, reset and restart everything
     stopPoseLandmarker(videoElement);
@@ -58,7 +62,7 @@ const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
 };
 
 // Initialize video feed
-const startVideoFeed = async (videoElement: HTMLVideoElement) => {
+const startWebVideoFeed = async (videoElement: HTMLVideoElement) => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -67,11 +71,69 @@ const startVideoFeed = async (videoElement: HTMLVideoElement) => {
         frameRate: { ideal: 30, max: 30 }, // Enforce consistent frame rate
       },
     });
-    webcamRunning(true);
     videoElement.srcObject = stream;
+    appState("Streaming");
     return videoElement.play();
   } catch (error) {
     console.error("Error accessing the camera:", error);
+  }
+};
+
+// Function to initialize camera for web or mobile
+export const startCamera = async (
+  videoElement: HTMLVideoElement,
+  canvasElement: HTMLCanvasElement
+) => {
+  const platform = Capacitor.getPlatform();
+
+  if (platform === "web") {
+    // Use web API to access camera on the web
+    await startWebVideoFeed(videoElement);
+  } else {
+    // Use Capacitor Camera Preview for mobile platforms
+    await startMobileCamera(canvasElement);
+  }
+};
+
+// Function to start camera on mobile using Capacitor plugin
+const startMobileCamera = async (canvasElement: HTMLCanvasElement) => {
+  const cameraPreviewOptions: CameraPreviewOptions = {
+    position: "rear",
+    width: canvasElement.width,
+    height: canvasElement.height,
+    parent: "video-feed", // This should match an existing element ID in the DOM
+    toBack: true, // Ensures your HTML goes over the camera preview
+    disableAudio: true, // Disable microphone access if not needed
+  };
+
+  try {
+    console.log(CameraPreview);
+    await CameraPreview.start(cameraPreviewOptions);
+    appState("Streaming");
+  } catch (error) {
+    console.error("Error starting mobile camera:", error);
+  }
+};
+
+// Stop the camera preview when required
+const stopCamera = async (videoElement: HTMLVideoElement) => {
+  const platform = Capacitor.getPlatform();
+
+  if (platform === "web") {
+    // Stop video feed on the web
+    stopWebVideoFeed(videoElement);
+  } else {
+    // Stop Capacitor camera preview on mobile
+    await CameraPreview.stop();
+  }
+};
+
+// Stop video feed for web platform
+const stopWebVideoFeed = (videoElement: HTMLVideoElement) => {
+  if (videoElement && videoElement.srcObject) {
+    const stream = videoElement.srcObject as MediaStream;
+    stream.getTracks().forEach((track) => track.stop());
+    videoElement.srcObject = null;
   }
 };
 
@@ -157,6 +219,5 @@ const stopPoseLandmarker = (videoElement: HTMLVideoElement) => {
     tracks.forEach((track) => track.stop());
     videoElement.srcObject = null;
   }
-  webcamRunning(false);
   appState("Pre");
 };

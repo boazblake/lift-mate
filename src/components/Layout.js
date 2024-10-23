@@ -7,8 +7,6 @@ const Layout = {
   view: (vnode) => {
     return m(
       "ion-page",
-      // Include the SideMenu
-
       // Header
       m("ion-header", { class: "ion-no-border" }, [
         m("ion-toolbar", [
@@ -19,10 +17,9 @@ const Layout = {
           m("ion-title", vnode.attrs.title || "PoseMate"),
         ]),
       ]),
-
+      // Include the SideMenu
       m(SideMenu),
 
-      // Main Content
       // Bottom Tabs Navigation
       m(Tabs, m("#mainContent", vnode.children))
     );
