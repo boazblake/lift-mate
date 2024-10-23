@@ -8,25 +8,33 @@ const PoseViewer = () => {
   return {
     onremove: () => videoElement && stopDetection(videoElement), // Stop detection when component is removed
     view: () => {
-      return m("section", [
+      return m(
+        "section",
+
         // Hidden video feed for pose detection
-        m("video", {
+        m("video#video-feed", {
           oncreate: ({ dom }) => (videoElement = dom), // Store video DOM element in its own oncreate
           playsinline: true,
           autoplay: true,
           muted: true,
           style: { display: "none" },
         }),
-
         // Canvas for pose overlay
         m("canvas", {
           oncreate: ({ dom }) => (canvasElement = dom), // Store canvas DOM element in its own oncreate
-          width: 1920,
-          height: 1080,
+          width: "1920px",
+          height: "1080px",
+          style: {
+            width: "100%" /* This makes the canvas width flexible */,
+            height: "auto" /* This maintains the aspect ratio */,
+            maxWidth:
+              "100%" /* Prevent the canvas from stretching beyond its container */,
+            display: "block" /* Avoid extra spacing below the canvas */,
+          },
         }),
 
         // Action buttons
-        m("div.action-buttons", [
+        m("aside.action-buttons", [
           // Start or Retake Pose Detection button
           m(
             "ion-button",
@@ -52,8 +60,8 @@ const PoseViewer = () => {
               "Stop"
             )
             : null,
-        ]),
-      ]);
+        ])
+      );
     },
   };
 };

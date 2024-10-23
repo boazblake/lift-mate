@@ -87,10 +87,6 @@ const checkWidth = (winW: number): number => {
 
 (model as Model).settings.profile = getProfile(winW);
 
-if (Capacitor.isNativePlatform()) {
-  SplashScreen.hide();
-}
-
 checkWidth(winW);
 
 m.route(root, "/", routes(model as Model));
