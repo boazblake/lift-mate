@@ -1,3 +1,4 @@
+import m from "mithril";
 import Stream from "mithril-stream";
 import {
   PoseLandmarker,
@@ -26,9 +27,10 @@ export const startDetection = async (
       onResults(canvasElement)
     ); // Initialize pose detection before starting the video
     await startCamera(videoElement, canvasElement); // Start video feed after pose detection is initialized
+    m.redraw();
   } else {
     // If in Retake state, reset and restart everything
-    stopPoseLandmarker(videoElement);
+    stopDetection(videoElement);
     appState("Pre");
     await startDetection(videoElement, canvasElement); // Restart the detection
   }
@@ -61,7 +63,7 @@ const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
   }
 };
 
-// Initialize video feed
+// Initialize video feed for web
 const startWebVideoFeed = async (videoElement: HTMLVideoElement) => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -84,8 +86,10 @@ export const startCamera = async (
   videoElement: HTMLVideoElement,
   canvasElement: HTMLCanvasElement
 ) => {
+  if (appState() == "Streaming") {
+    await stopCamera(videoElement);
+  }
   const platform = Capacitor.getPlatform();
-
   if (platform === "web") {
     // Use web API to access camera on the web
     await startWebVideoFeed(videoElement);
@@ -98,7 +102,7 @@ export const startCamera = async (
 // Function to start camera on mobile using Capacitor plugin
 const startMobileCamera = async (canvasElement: HTMLCanvasElement) => {
   const cameraPreviewOptions: CameraPreviewOptions = {
-    position: "rear",
+    position: "front",
     width: canvasElement.width,
     height: canvasElement.height,
     parent: "video-feed", // This should match an existing element ID in the DOM
@@ -107,16 +111,90 @@ const startMobileCamera = async (canvasElement: HTMLCanvasElement) => {
   };
 
   try {
-    console.log(CameraPreview);
     await CameraPreview.start(cameraPreviewOptions);
     appState("Streaming");
+    renderMobileLoop(canvasElement); // Start rendering the captured frames
   } catch (error) {
     console.error("Error starting mobile camera:", error);
   }
 };
 
+// Function to capture a frame from the camera preview
+const captureFrame = async () => {
+  try {
+    const frame = await CameraPreview.captureSample({
+      quality: 80, // Adjust quality as needed
+    });
+    return frame.value; // This is a base64 image
+  } catch (error) {
+    console.error("Error capturing frame from CameraPreview", error);
+    return null;
+  }
+};
+
+// Convert base64 to HTMLImageElement
+const base64ToImage = (base64) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = "data:image/jpeg;base64," + base64;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+};
+
+// Render loop for mobile
+const renderMobileLoop = async (canvasElement: HTMLCanvasElement) => {
+  const canvasCtx = canvasElement.getContext("2d");
+
+  const drawingUtils = new DrawingUtils(canvasElement.getContext("2d"));
+
+  const processFrame = async () => {
+    const base64Image = await captureFrame(); // Capture frame from CameraPreview
+    if (!base64Image) {
+      requestAnimationFrame(processFrame);
+      return;
+    }
+
+    const image = (await base64ToImage(base64Image)) as CanvasImageSource; // Convert base64 to image
+
+    if (canvasCtx && image) {
+      // Clear the canvas
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+      // Draw the captured frame onto the canvas (optional, for debugging)
+      canvasCtx.drawImage(
+        image,
+        0,
+        0,
+        canvasElement.width,
+        canvasElement.height
+      );
+
+      // Process the frame using MediaPipe
+      const results = await poseLandmarker.detect(image);
+
+      // Draw landmarks and connectors if results are available
+      if (results && results.landmarks && results.landmarks.length > 0) {
+        results.landmarks.forEach((landmarks) => {
+          drawingUtils.drawLandmarks(landmarks);
+          drawingUtils.drawConnectors(
+            landmarks,
+            PoseLandmarker.POSE_CONNECTIONS
+          );
+        });
+      }
+    }
+
+    // Continue the loop for the next frame
+    requestAnimationFrame(processFrame);
+  };
+
+  // Start the processing loop
+  requestAnimationFrame(processFrame);
+};
+
 // Stop the camera preview when required
-const stopCamera = async (videoElement: HTMLVideoElement) => {
+export const stopCamera = async (videoElement: HTMLVideoElement) => {
   const platform = Capacitor.getPlatform();
 
   if (platform === "web") {
@@ -126,6 +204,9 @@ const stopCamera = async (videoElement: HTMLVideoElement) => {
     // Stop Capacitor camera preview on mobile
     await CameraPreview.stop();
   }
+  stopDetection(videoElement);
+  appState("Pre");
+  m.redraw();
 };
 
 // Stop video feed for web platform
@@ -154,7 +235,7 @@ const initPoseLandmarker = async (
           "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
         delegate: "GPU",
       },
-      runningMode: "VIDEO",
+      runningMode: Capacitor.getPlatform() != "web" ? "IMAGE" : "VIDEO", // Switch mode based on platform
       numPoses: 2,
       minPoseDetectionConfidence: 0.5,
       minPosePresenceConfidence: 0.5,
@@ -164,7 +245,7 @@ const initPoseLandmarker = async (
     const drawingUtils = new DrawingUtils(canvasElement.getContext("2d"));
 
     const renderLoop = () => {
-      let videoTime = performance.now(); // videoElement.currentTime * 1000; // Convert to milliseconds
+      let videoTime = performance.now();
       let lastTimestamp = 0;
       const canvasCtx = canvasElement.getContext("2d");
 
@@ -183,7 +264,6 @@ const initPoseLandmarker = async (
         if (videoTime <= lastTimestamp) {
           videoTime = lastTimestamp + 1; // Force monotonic increase
         }
-        console.log("time", lastTimestamp, videoTime);
         lastTimestamp = videoTime;
         const results = poseLandmarker.detectForVideo(videoElement, videoTime);
         if (results && results.landmarks && results.landmarks.length > 0) {
