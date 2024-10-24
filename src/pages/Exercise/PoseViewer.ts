@@ -1,18 +1,18 @@
 import m from "mithril";
-import { appState, startDetection, stopDetection } from "./model";
+import { appState, startDetection, stopCamera } from "./model";
 
 const PoseViewer = () => {
   let videoElement: HTMLVideoElement | null = null;
   let canvasElement: HTMLCanvasElement | null = null;
-
+  stopCamera(videoElement);
   return {
-    onremove: () => videoElement && stopDetection(videoElement), // Stop detection when component is removed
+    onremove: () => videoElement && stopCamera(videoElement), // Stop detection when component is removed
     view: () => {
       return m(
         "section",
-
+        m("#video-feed", { style: { display: "hidden" } }),
         // Hidden video feed for pose detection
-        m("video#video-feed", {
+        m("video", {
           oncreate: ({ dom }) => (videoElement = dom), // Store video DOM element in its own oncreate
           playsinline: true,
           autoplay: true,
@@ -26,7 +26,7 @@ const PoseViewer = () => {
           height: "1080px",
           style: {
             width: "100%" /* This makes the canvas width flexible */,
-            height: "auto" /* This maintains the aspect ratio */,
+            height: "90vh" /* This maintains the aspect ratio */,
             maxWidth:
               "100%" /* Prevent the canvas from stretching beyond its container */,
             display: "block" /* Avoid extra spacing below the canvas */,
@@ -51,14 +51,14 @@ const PoseViewer = () => {
           // Stop Pose Detection button (visible only when streaming)
           appState() === "Streaming"
             ? m(
-              "ion-button",
-              {
-                onclick: () => {
-                  videoElement && stopDetection(videoElement);
+                "ion-button",
+                {
+                  onclick: () => {
+                    videoElement && stopCamera(videoElement);
+                  },
                 },
-              },
-              "Stop"
-            )
+                "Stop"
+              )
             : null,
         ])
       );
