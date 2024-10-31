@@ -1,7 +1,7 @@
 import m from "mithril";
 import Layout from "@/components/Layout.js";
 import Home from "@/pages/Home.js";
-import Exercise from "@/pages/Exercise/index.js";
+import Pose from "@/pages/Pose/index.ts";
 import Progress from "@/pages/Progress.js";
 
 const routes = (mdl) => {
@@ -9,8 +9,8 @@ const routes = (mdl) => {
     "/": {
       render: () => m(Layout, m(Home)),
     },
-    "/exercise": {
-      render: () => m(Layout, m(Exercise)),
+    "/pose": {
+      render: () => m(Layout, m(Pose)),
     },
     "/progress": {
       render: () => m(Layout, m(Progress)),

@@ -22,6 +22,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera for real-time pose estimation during workouts.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone to record audio as part of the video capture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to your photo library to save workout images or videos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to load images or videos for workout analysis.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -45,15 +53,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-
-	<!-- Privacy Usage Descriptions -->
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera for real-time pose estimation during workouts.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need access to your photo library to save workout images or videos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to load images or videos for workout analysis.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app requires access to the microphone to record audio as part of the video capture.</string>
 </dict>
 </plist>

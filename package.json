@@ -18,6 +18,8 @@
     "lint": "eslint .",
     "run:ios": "cross-env MODE=$MODE ionic capacitor run ios -l --external",
     "make:assets": "npx capacitor-assets generate",
+    "goios": "MODE=mobile npm run run:ios",
+    "goweb": "MODE=ssl npm run dev",
     "make:certs": "mkdir -p .cert && mkcert -key-file ./.cert/key.pem -cert-file ./.cert/cert.pem 'localhost'"
   },
   "dependencies": {
