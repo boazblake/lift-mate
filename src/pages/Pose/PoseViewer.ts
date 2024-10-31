@@ -1,11 +1,10 @@
-// PoseViewer.ts
-
 import m from "mithril";
 import {
   appState,
   startDetection,
   stopDetection,
   setExerciseHandler,
+  recordedPoses,
 } from "./model";
 import { SquatExercise } from "./exercises/squat";
 import { Exercise } from "./exercises/types";
@@ -41,12 +40,23 @@ const PoseViewer = () => {
           height: "720px",
           style: {
             width: "100%",
-            height: "90vh",
+            height: "80vh",
             display: "block",
           },
         }),
+        // Div for mobile camera preview
+        m("div#video-feed", {
+          style: {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1, // Ensure it stays behind other elements
+          },
+        }),
         // Exercise selection UI
-        m("div.exercise-selection", [
+        m(".exercise-selection", [
           m("label", { for: "exercise-select" }, "Select Exercise: "),
           m(
             "select#exercise-select",
@@ -66,6 +76,10 @@ const PoseViewer = () => {
             ]
           ),
         ]),
+        // Recording status (optional)
+        m(".recording-status", [
+          m("pre", JSON.stringify(recordedPoses(), null, 2)),
+        ]),
         // Action buttons
         m("aside.action-buttons", [
           m(
@@ -84,7 +98,7 @@ const PoseViewer = () => {
                 "ion-button",
                 {
                   onclick: () => {
-                    console.log("wtf");
+                    console.log("Stopping detection");
                     if (videoElement) stopDetection(videoElement);
                   },
                 },

@@ -6,11 +6,11 @@ import path from "path";
 import fs from "fs";
 
 export default defineConfig(({ mode }) => {
-  const isDev = mode === "development";
+  const isMobile = mode === "mobile";
   const isSSL = mode === "ssl";
-  console.log("isdev?", mode, isDev);
+  console.log("mode?", mode);
   return {
-    base: isDev ? "/" : "/lift-mate/",
+    base: isMobile ? "/" : "/lift-mate/",
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
         targets: ["ie >= 11"],
         additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
       }),
-      isDev && mkcert(),
+      !isMobile && mkcert(),
     ],
     resolve: {
       alias: {
@@ -51,19 +51,19 @@ export default defineConfig(({ mode }) => {
       minify: "terser",
     },
     server:
-      isDev || isSSL
+      !isMobile || isSSL
         ? {
-          port: 8101, // Specify the port here
-          strictPort: true, // Ensures that Vite fails if the port is unavailable
-          https: {
-            key: fs.readFileSync("./.cert/key.pem"),
-            cert: fs.readFileSync("./.cert/cert.pem"),
-          },
-        }
+            port: 8101, // Specify the port here
+            strictPort: true, // Ensures that Vite fails if the port is unavailable
+            https: {
+              key: fs.readFileSync("./.cert/key.pem"),
+              cert: fs.readFileSync("./.cert/cert.pem"),
+            },
+          }
         : {
-          port: 8101, // Specify the port here
-          strictPort: true, // Ensures that Vite fails if the port is unavailable
-        },
+            port: 8101, // Specify the port here
+            strictPort: true, // Ensures that Vite fails if the port is unavailable
+          },
     optimizeDeps: {
       exclude: [
         "@ionic/core", // You can also add other Ionic components here if needed
