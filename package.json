@@ -20,6 +20,10 @@
     "make:assets": "npx capacitor-assets generate",
     "goios": "MODE=mobile npm run run:ios",
     "goweb": "MODE=ssl npm run dev",
+    "buildweb": "MODE=ssl npm run build",
+    "buildios": "MODE=mobile npm run build",
+    "startios": "npm run buildios && npm run goios",
+    "startweb": "npm run buildweb && npm run goweb",
     "make:certs": "mkdir -p .cert && mkcert -key-file ./.cert/key.pem -cert-file ./.cert/cert.pem 'localhost'"
   },
   "dependencies": {
