@@ -10,11 +10,15 @@ import {
   CameraPreviewOptions,
 } from "@capacitor-community/camera-preview";
 import { Capacitor } from "@capacitor/core";
+import { Exercise } from "./exercises/types"; // Import the Exercise interface
 
 // State management using Mithril Streams
 export const appState = Stream("Pre"); // Pre or Streaming state
-let poseLandmarker: any;
-
+let poseLandmarker: PoseLandmarker | null = null;
+let exerciseHandler: Exercise | null = null;
+export const setExerciseHandler = (exercise: Exercise | null) => {
+  exerciseHandler = exercise;
+};
 // Function to start pose detection
 export const startDetection = async (
   videoElement: HTMLVideoElement,
@@ -59,6 +63,11 @@ const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
         window.POSE_CONNECTIONS,
         { color: "white", lineWidth: 10 }
       );
+
+      if (exerciseHandler) {
+        console.log("exrc handler", exerciseHandler);
+        exerciseHandler.processLandmarks(results.landmarks, canvasCtx);
+      }
     }
   }
 };

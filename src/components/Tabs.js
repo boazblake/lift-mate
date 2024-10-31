@@ -10,7 +10,7 @@ const Tabs = {
           m("ion-icon", { name: "home" }),
           m("ion-label", "Home"),
         ]),
-        m("ion-tab-button", { onclick: () => m.route.set("/exercise") }, [
+        m("ion-tab-button", { onclick: () => m.route.set("/pose") }, [
           m("ion-icon", { name: "barbell" }),
           m("ion-label", "Exercise"),
         ]),
