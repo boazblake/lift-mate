@@ -32,7 +32,11 @@ export const resetRecordedPoses = () => {
 };
 
 // Function to add a new pose to the recording
-export const addPose = (pose: any) => recordedPoses([...recordedPoses(), pose]); // Trigger stream update
+export const addPose = (pose: any) => {
+  recordedPoses([...recordedPoses(), pose]); // Immutable update
+  console.log("Pose added. Total poses:", recordedPoses().length);
+  m.redraw(); // Force redraw if necessary
+};
 
 // Function to start pose detection
 export const startDetection = async (
@@ -69,68 +73,87 @@ export const stopDetection = async (videoElement: HTMLVideoElement) => {
   // Update application state
   appState("Pre");
 
-  // Prompt the user to save the recording
-  const shouldSave = confirm("Do you want to save the last recording?");
-  if (shouldSave) {
-    saveRecording();
-  }
-
   // Reset recorded poses for the next session
   resetRecordedPoses();
 
   // Provide user feedback
   alert("Pose detection and camera have been stopped successfully.");
 
+  // Prompt the user to save the recording
+  const shouldSave = confirm("Do you want to save the last recording?");
+  if (shouldSave) {
+    saveRecording(); // Ensure this function is correctly implemented
+  }
+
   m.redraw();
 };
 
 // Function to handle the results of pose detection
 const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
-  console.log("Pose detection results:", results);
+  // Check if landmarks are present
+  if (results.landmarks && results.landmarks.length > 0) {
+    console.log("Pose detection results:", results);
 
-  // Store the detected pose landmarks
-  if (results.poseLandmarks) {
-    addPose(results.poseLandmarks);
-  }
+    // Iterate over each detected pose (up to numPoses)
+    results.landmarks.forEach((pose: any, index: number) => {
+      // Add the pose to recordedPoses
+      addPose(pose);
 
-  // Process results and draw landmarks on the canvas
-  if (results.poseLandmarks) {
-    const canvasCtx = canvasElement.getContext("2d");
-    if (canvasCtx) {
-      DrawingUtils.drawLandmarks(canvasCtx, results.poseLandmarks, {
-        color: "red",
-        lineWidth: 10,
-      });
-      DrawingUtils.drawConnectors(
-        canvasCtx,
-        results.poseLandmarks,
-        window.POSE_CONNECTIONS,
-        { color: "white", lineWidth: 10 }
-      );
+      // Draw landmarks and connectors on the canvas
+      const canvasCtx = canvasElement.getContext("2d");
+      const drawingUtils = new DrawingUtils(canvasCtx);
+      if (canvasCtx) {
+        drawingUtils.drawLandmarks(canvasCtx, [pose], {
+          color: "red",
+          lineWidth: 10,
+        });
+        drawingUtils.drawConnectors(
+          canvasCtx,
+          [pose],
+          window.POSE_CONNECTIONS,
+          {
+            color: "white",
+            lineWidth: 10,
+          }
+        );
 
-      if (exerciseHandler) {
-        console.log("Exercise handler processing landmarks.");
-        exerciseHandler.processLandmarks(results.landmarks, canvasCtx);
+        // Process landmarks with the exercise handler, if available
+        if (exerciseHandler) {
+          console.log(
+            `Exercise handler processing landmarks for pose ${index + 1}.`
+          );
+          exerciseHandler.processLandmarks(pose, canvasCtx);
+        }
       }
-    }
+    });
   }
 };
 
 // Function to save the recorded poses
 export const saveRecording = () => {
-  const data = JSON.stringify(recordedPoses(), null, 2);
-  const blob = new Blob([data], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+  try {
+    const data = JSON.stringify(recordedPoses(), null, 2);
+    console.log("Serialized Pose Data:", data); // Debugging line
 
-  // Create a temporary link to trigger the download
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `pose_recording_${new Date().toISOString()}.json`;
-  a.click();
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    console.log("Blob URL:", url); // Debugging line
 
-  // Clean up
-  URL.revokeObjectURL(url);
-  console.log("Recording saved successfully.");
+    // Create a temporary link to trigger the download
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pose_recording_${new Date().toISOString()}.json`;
+    document.body.appendChild(a); // Append to the DOM to ensure compatibility
+    a.click();
+    document.body.removeChild(a); // Clean up
+
+    // Clean up
+    URL.revokeObjectURL(url);
+    console.log("Recording saved successfully.");
+  } catch (error) {
+    console.error("Error saving recording:", error);
+    alert("An error occurred while saving the recording.");
+  }
 };
 
 // Initialize video feed for web
