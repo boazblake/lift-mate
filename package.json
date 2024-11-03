@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "404": "cp public/index.html public/404.html",
-    "clean": "rm -rf public",
+    "404": "cp docs/index.html docs/404.html",
+    "clean": "rm -rf docs",
     "dev": "cross-env MODE=$MODE vite --mode $MODE --host",
     "ionic:serve": "cross-env MODE=$MODE vite --mode $MODE",
     "ionic:build": "npm run clean && cross-env MODE=$MODE vite build --mode $MODE && npm run 404",
