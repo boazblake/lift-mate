@@ -20,22 +20,28 @@ export const setExerciseHandler = (exercise: Exercise | null) => {
   exerciseHandler = exercise;
 };
 
-// New state for recording poses
-export const recordedPoses = Stream<Array<any>>([]); // Stores arrays of pose landmarks
+export interface PoseFrame {
+  timestamp: number;
+  poses: Array<any>; // Replace `any` with a specific type if available
+}
+
+export const recordedFrames = Stream<Array<PoseFrame>>([]);
+
+export const addPose = (pose: any) => {
+  const currentTime = performance.now() / 1000; // Current time in seconds
+  recordedFrames([
+    ...recordedFrames(),
+    { timestamp: currentTime, poses: [pose] },
+  ]);
+  console.log("Pose added. Total frames:", recordedFrames()[0]);
+};
 
 // Control flag for render loops
 let isRendering = false;
 
 // Reset recorded poses
 export const resetRecordedPoses = () => {
-  recordedPoses([]);
-};
-
-// Function to add a new pose to the recording
-export const addPose = (pose: any) => {
-  recordedPoses([...recordedPoses(), pose]); // Immutable update
-  console.log("Pose added. Total poses:", recordedPoses().length);
-  m.redraw(); // Force redraw if necessary
+  recordedFrames([]);
 };
 
 // Function to start pose detection
@@ -73,9 +79,6 @@ export const stopDetection = async (videoElement: HTMLVideoElement) => {
   // Update application state
   appState("Pre");
 
-  // Reset recorded poses for the next session
-  resetRecordedPoses();
-
   // Provide user feedback
   alert("Pose detection and camera have been stopped successfully.");
 
@@ -84,7 +87,8 @@ export const stopDetection = async (videoElement: HTMLVideoElement) => {
   if (shouldSave) {
     saveRecording(); // Ensure this function is correctly implemented
   }
-
+  // Reset recorded poses for the next session
+  resetRecordedPoses();
   m.redraw();
 };
 
@@ -96,14 +100,14 @@ const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
 
     // Iterate over each detected pose (up to numPoses)
     results.landmarks.forEach((pose: any, index: number) => {
-      // Add the pose to recordedPoses
+      // Add the pose to recordedFrames
       addPose(pose);
 
       // Draw landmarks and connectors on the canvas
       const canvasCtx = canvasElement.getContext("2d");
       const drawingUtils = new DrawingUtils(canvasCtx);
       if (canvasCtx) {
-        drawingUtils.drawLandmarks(canvasCtx, [pose], {
+        drawingUtils.drawLandmarks([pose], {
           color: "red",
           lineWidth: 10,
         });
@@ -132,7 +136,7 @@ const onResults = (canvasElement: HTMLCanvasElement) => (results: any) => {
 // Function to save the recorded poses
 export const saveRecording = () => {
   try {
-    const data = JSON.stringify(recordedPoses(), null, 2);
+    const data = JSON.stringify(recordedFrames(), null, 2);
     console.log("Serialized Pose Data:", data); // Debugging line
 
     const blob = new Blob([data], { type: "application/json" });
