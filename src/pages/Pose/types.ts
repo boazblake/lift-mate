@@ -5,3 +5,8 @@ export interface Exercise {
     canvasCtx: CanvasRenderingContext2D
   ) => void;
 }
+
+export interface PoseFrame {
+  timestamp: number;
+  poses: Array<any>; // Replace `any` with a specific type if available
+}

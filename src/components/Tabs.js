@@ -14,6 +14,10 @@ const Tabs = {
           m("ion-icon", { name: "barbell" }),
           m("ion-label", "Exercise"),
         ]),
+        m("ion-tab-button", { onclick: () => m.route.set("/playback") }, [
+          m("ion-icon", { name: "refresh-outline" }),
+          m("ion-label", "Exercise Review"),
+        ]),
         m("ion-tab-button", { onclick: () => m.route.set("/progress") }, [
           m("ion-icon", { name: "stats-chart" }),
           m("ion-label", "Progress"),
