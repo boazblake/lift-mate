@@ -61,7 +61,7 @@ export const loadRecordingData = (data: PoseFrame[]) => {
     // Optional: Further validate each pose
     for (const pose of frame.poses) {
       if (!Array.isArray(pose)) {
-        console.error("Invalid pose structure:", pose);
+        console.error("Invalid pose structure:", pose, frame.timestamp);
         alert(
           "Failed to load recording. One or more poses have an invalid structure."
         );

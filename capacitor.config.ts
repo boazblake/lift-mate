@@ -5,7 +5,7 @@ const isDev = process.env.NODE_ENV === "development";
 const config: CapacitorConfig = {
   appId: "io.ionic.liftmate",
   appName: "Lift Mate",
-  webDir: "public", // Ensure this matches the directory where your built web assets are stored
+  webDir: "docs", // Ensure this matches the directory where your built web assets are stored
   server: isDev
     ? {
       url: "http://localhost:8101", // Only use this during development
