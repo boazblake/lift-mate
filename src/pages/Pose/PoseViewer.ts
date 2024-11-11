@@ -38,40 +38,40 @@ const PoseViewer = () => {
           },
         }),
         m("div.exercise-selection", [
-          m("label", { for: "camera-select" }, "Select Camera: "),
-          m(
-            "select#camera-select",
-            {
-              onchange: (e: Event) => {
-                const cameraPosition = (e.target as HTMLSelectElement).value;
-                setCameraHandler(cameraPosition);
+          // JSON.stringify(state),
+          state.appState() === "Pre" && [
+            m("label", { for: "camera-select" }, "Select Camera: "),
+            m(
+              "select#camera-select",
+              {
+                onchange: (e: Event) => {
+                  const cameraPosition = (e.target as HTMLSelectElement).value;
+                  setCameraHandler(cameraPosition);
+                },
               },
-            },
-            [
-              { key: "front", value: true },
-              { key: "rear", value: false },
-            ].map((position) =>
-              m("option", { value: position.value }, position.key)
-            )
-          ),
-          m("label", { for: "exercise-select" }, "Select Exercise: "),
-          m(
-            "select#exercise-select",
-            {
-              onchange: (e: Event) => {
-                const selectedName = (e.target as HTMLSelectElement).value;
-                const selectedExercise =
-                  exercises.find((ex) => ex.name === selectedName) || null;
-                setExerciseHandler(selectedExercise);
+              ["front", "rear"].map((position) =>
+                m("option", { value: position }, position)
+              )
+            ),
+            m("label", { for: "exercise-select" }, "Select Exercise: "),
+            m(
+              "select#exercise-select",
+              {
+                onchange: (e: Event) => {
+                  const selectedName = (e.target as HTMLSelectElement).value;
+                  const selectedExercise =
+                    exercises.find((ex) => ex.name === selectedName) || null;
+                  setExerciseHandler(selectedExercise);
+                },
               },
-            },
-            [
-              m("option", { value: "" }, "None"),
-              ...exercises.map((ex) =>
-                m("option", { value: ex.name }, ex.name)
-              ),
-            ]
-          ),
+              [
+                m("option", { value: "" }, "None"),
+                ...exercises.map((ex) =>
+                  m("option", { value: ex.name }, ex.name)
+                ),
+              ]
+            ),
+          ],
         ]),
         m("aside.action-buttons", [
           m(
@@ -83,9 +83,9 @@ const PoseViewer = () => {
                 }
               },
             },
-            state.appState === "Pre" ? "Start Pose Detection" : "Retake"
+            state.appState() === "Pre" ? "Start Pose Detection" : "Retake"
           ),
-          state.appState === "Streaming"
+          state.appState() === "Streaming"
             ? m(
               "ion-button",
               {
