@@ -1,6 +1,11 @@
 import m from "mithril";
-import { startDetection, stopDetection, setCameraHandler } from "./model";
-import { setExerciseHandler, state } from "./model.utils";
+import {
+  state,
+  startDetection,
+  stopDetection,
+  setExerciseHandler,
+  setCameraHandler,
+} from "./model";
 import { Exercise } from "./exercises/types";
 import { SquatExercise } from "./exercises/squat";
 
@@ -17,7 +22,7 @@ const PoseViewer = () => {
           playsinline: true,
           autoplay: true,
           muted: true,
-          style: { display: "none" }, // Hidden for mobile; used in web render loop
+          style: { display: "none" },
         }),
         m("canvas", {
           oncreate: ({ dom }) => {
@@ -33,6 +38,7 @@ const PoseViewer = () => {
           },
         }),
         m("div.exercise-selection", [
+          // JSON.stringify(state),
           state.appState() === "Pre" && [
             m("label", { for: "camera-select" }, "Select Camera: "),
             m(
@@ -40,7 +46,7 @@ const PoseViewer = () => {
               {
                 onchange: (e: Event) => {
                   const cameraPosition = (e.target as HTMLSelectElement).value;
-                  setCameraHandler(cameraPosition); // Adjust camera position for mobile
+                  setCameraHandler(cameraPosition);
                 },
               },
               ["front", "rear"].map((position) =>
@@ -55,7 +61,7 @@ const PoseViewer = () => {
                   const selectedName = (e.target as HTMLSelectElement).value;
                   const selectedExercise =
                     exercises.find((ex) => ex.name === selectedName) || null;
-                  setExerciseHandler(selectedExercise); // Set chosen exercise
+                  setExerciseHandler(selectedExercise);
                 },
               },
               [
@@ -73,7 +79,7 @@ const PoseViewer = () => {
             {
               onclick: async () => {
                 if (state.videoElement && state.canvasElement) {
-                  await startDetection(); // Initiates detection for web or mobile based on platform
+                  await startDetection();
                 }
               },
             },
@@ -84,7 +90,7 @@ const PoseViewer = () => {
               "ion-button",
               {
                 onclick: async () => {
-                  if (state.videoElement) await stopDetection(); // Stops detection and camera
+                  if (state.videoElement) await stopDetection();
                 },
               },
               "Stop"
