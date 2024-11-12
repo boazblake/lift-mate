@@ -1,0 +1,122 @@
+import {
+  CameraPreview,
+  CameraPreviewOptions,
+} from "@capacitor-community/camera-preview";
+import { state, addPose, drawLandmarks } from "./model.utils";
+
+// Start the mobile camera
+export const startCameraForMobile = async () => {
+  const cameraPreviewOptions: CameraPreviewOptions = {
+    position: state.cameraPosition,
+    width: state.canvasElement?.width || 1280,
+    height: state.canvasElement?.height || 720,
+    parent: "video-feed",
+    toBack: true,
+    disableAudio: true,
+  };
+  await CameraPreview.start(cameraPreviewOptions);
+  state.appState("Streaming");
+};
+
+// Flip the mobile camera
+export const flipCameraForMobile = async () => {
+  await CameraPreview.flip();
+};
+
+// Render loop for mobile
+export const renderLoopForMobile = async (
+  ctx: CanvasRenderingContext2D | null
+) => {
+  console.log("here i am");
+  if (!ctx) {
+    console.error("Canvas context not available in render loop.");
+    return;
+  }
+
+  const processFrame = async () => {
+    if (!state.isRendering() || !state.poseLandmarker) {
+      console.log(
+        "Stopping mobile render loop - rendering stopped or poseLandmarker not available."
+      );
+      return;
+    }
+
+    try {
+      // Capture frame from CameraPreview
+      let frame;
+      try {
+        frame = await CameraPreview.captureSample({ quality: 85 });
+      } catch (captureError) {
+        console.error(
+          "Error capturing frame from CameraPreview:",
+          captureError
+        );
+        state.isRendering(false);
+        state.appState("Pre");
+        return;
+      }
+
+      // Convert base64 to HTMLImageElement
+      let image;
+      try {
+        image = await base64ToImage(frame.value);
+      } catch (imageError) {
+        console.error("Error converting base64 to image:", imageError);
+        state.isRendering(false);
+        state.appState("Pre");
+        return;
+      }
+
+      // Clear and draw the frame on canvas
+      ctx.clearRect(
+        0,
+        0,
+        state.canvasElement.width,
+        state.canvasElement.height
+      );
+      ctx.drawImage(
+        image,
+        0,
+        0,
+        state.canvasElement.width,
+        state.canvasElement.height
+      );
+
+      // Run pose detection on the captured image
+      try {
+        const results = await state.poseLandmarker.detect(image);
+        if (results?.landmarks?.length) {
+          results.landmarks.forEach((pose) => addPose(pose));
+          drawLandmarks(ctx, results.landmarks);
+        }
+      } catch (detectionError) {
+        console.error("Error during pose detection:", detectionError);
+        state.isRendering(false);
+        state.appState("Pre");
+        return;
+      }
+
+      requestAnimationFrame(processFrame); // Continue loop if no errors
+    } catch (generalError) {
+      console.error("Unexpected error in mobile render loop:", generalError);
+      state.isRendering(false);
+      state.appState("Pre"); // Revert to Pre state on any unexpected error
+    }
+  };
+
+  requestAnimationFrame(processFrame);
+};
+
+// Convert base64 to HTMLImageElement
+const base64ToImage = (base64: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = "data:image/jpeg;base64," + base64;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+
+// Stop the mobile camera
+export const stopCameraForMobile = async () => {
+  await CameraPreview.stop();
+};
