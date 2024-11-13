@@ -7,11 +7,11 @@ export type Landmark = {
 
 // Represents a collection of landmarks for a single frame
 export type Pose = Array<Landmark>;
-
+export type Poses = Array<Pose>;
 // Represents a single frame with timestamp and one or more poses
 export interface PoseFrame {
   timestamp: number; // Unix timestamp in seconds
-  poses: Array<Pose>; // Array of poses (e.g., multiple people or poses per frame)
+  poses: Poses; // Array of poses (e.g., multiple people or poses per frame)
 }
 
 export interface Exercise {
