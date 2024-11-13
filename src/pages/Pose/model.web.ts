@@ -1,4 +1,5 @@
 import { state, addPose, drawLandmarks } from "./model.utils";
+import { Pose } from "./types";
 
 // Start the web camera
 export const startCameraForWeb = async () => {
@@ -19,7 +20,7 @@ export const startCameraForWeb = async () => {
 export const renderLoopForWeb = async () => {
   console.log("renderLoopForWeb", state);
   if (
-    !state.isRendering() ||
+    !state.isRendering ||
     !state.poseLandmarker ||
     !state.canvasElement ||
     !state.videoElement
@@ -50,7 +51,7 @@ export const renderLoopForWeb = async () => {
       videoTime
     );
     if (results?.landmarks?.length && ctx) {
-      results.landmarks.forEach((pose) => addPose(pose));
+      results.landmarks.forEach((pose: Pose) => addPose(pose));
       drawLandmarks(ctx, results.landmarks);
     }
     requestAnimationFrame(processFrame);

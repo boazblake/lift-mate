@@ -3,6 +3,7 @@ import {
   CameraPreviewOptions,
 } from "@capacitor-community/camera-preview";
 import { state, addPose, drawLandmarks } from "./model.utils";
+import { Pose } from "./types";
 
 // Start the mobile camera
 export const startCameraForMobile = async () => {
@@ -68,25 +69,27 @@ export const renderLoopForMobile = async (
       }
 
       // Clear and draw the frame on canvas
-      ctx.clearRect(
-        0,
-        0,
-        state.canvasElement.width,
-        state.canvasElement.height
-      );
-      ctx.drawImage(
-        image,
-        0,
-        0,
-        state.canvasElement.width,
-        state.canvasElement.height
-      );
+      if (state.canvasElement) {
+        ctx.clearRect(
+          0,
+          0,
+          state.canvasElement.width,
+          state.canvasElement.height
+        );
+        ctx.drawImage(
+          image,
+          0,
+          0,
+          state.canvasElement.width,
+          state.canvasElement.height
+        );
+      }
 
       // Run pose detection on the captured image
       try {
         const results = await state.poseLandmarker.detect(image);
         if (results?.landmarks?.length) {
-          results.landmarks.forEach((pose) => addPose(pose));
+          results.landmarks.forEach((pose: Pose) => addPose(pose));
           drawLandmarks(ctx, results.landmarks);
         }
       } catch (detectionError) {

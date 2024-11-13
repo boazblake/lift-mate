@@ -1,7 +1,7 @@
 import m from "mithril";
 import { startDetection, stopDetection, setCameraHandler } from "./model";
 import { setExerciseHandler, state } from "./model.utils";
-import { Exercise } from "./exercises/types";
+import { Exercise } from "./types";
 import { SquatExercise } from "./exercises/squat";
 
 const exercises: Exercise[] = [SquatExercise];
@@ -11,8 +11,8 @@ const PoseViewer = () => {
     view: () => {
       return m("section.pose-viewer", [
         m("video", {
-          oncreate: ({ dom }) => {
-            state.videoElement = dom as HTMLVideoElement;
+          oncreate: ({ dom }: { dom: HTMLVideoElement }) => {
+            state.videoElement = dom;
           },
           playsinline: true,
           autoplay: true,
@@ -20,8 +20,8 @@ const PoseViewer = () => {
           style: { display: "none" }, // Hidden for mobile; used in web render loop
         }),
         m("canvas", {
-          oncreate: ({ dom }) => {
-            state.canvasElement = dom as HTMLCanvasElement;
+          oncreate: ({ dom }: { dom: HTMLCanvasElement }) => {
+            state.canvasElement = dom;
           },
           width: "1280px",
           height: "720px",
@@ -81,14 +81,14 @@ const PoseViewer = () => {
           ),
           state.appState() === "Streaming"
             ? m(
-              "ion-button",
-              {
-                onclick: async () => {
-                  if (state.videoElement) await stopDetection(); // Stops detection and camera
+                "ion-button",
+                {
+                  onclick: async () => {
+                    if (state.videoElement) await stopDetection(); // Stops detection and camera
+                  },
                 },
-              },
-              "Stop"
-            )
+                "Stop"
+              )
             : null,
         ]),
       ]);
