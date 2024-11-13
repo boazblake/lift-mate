@@ -51,6 +51,7 @@ export const renderLoopForWeb = async () => {
       videoTime
     );
     if (results?.landmarks?.length && ctx) {
+      state.isLoading(false);
       results.landmarks.forEach((pose: Pose) => addPose(pose));
       drawLandmarks(ctx, results.landmarks);
     }

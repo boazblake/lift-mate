@@ -15,8 +15,12 @@ export const startCameraForMobile = async () => {
     toBack: true,
     disableAudio: true,
   };
+  try {
+    await CameraPreview.stop(); // Stop if already running
+  } catch (error) {
+    console.warn("CameraPreview was not running or failed to stop:", error);
+  }
   await CameraPreview.start(cameraPreviewOptions);
-  state.appState("Streaming");
 };
 
 // Flip the mobile camera
@@ -28,7 +32,6 @@ export const flipCameraForMobile = async () => {
 export const renderLoopForMobile = async (
   ctx: CanvasRenderingContext2D | null
 ) => {
-  console.log("here i am");
   if (!ctx) {
     console.error("Canvas context not available in render loop.");
     return;
@@ -89,6 +92,7 @@ export const renderLoopForMobile = async (
       try {
         const results = await state.poseLandmarker.detect(image);
         if (results?.landmarks?.length) {
+          state.isLoading(false);
           results.landmarks.forEach((pose: Pose) => addPose(pose));
           drawLandmarks(ctx, results.landmarks);
         }

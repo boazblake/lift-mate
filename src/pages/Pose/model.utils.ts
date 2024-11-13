@@ -7,6 +7,17 @@ import {
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 
+export const resetState = () => {
+  state.recordedFrames([]);
+  state.appState("Pre");
+  state.videoElement = null;
+  state.canvasElement = null;
+  state.poseLandmarker = null;
+  state.exercise = null;
+  state.cameraPosition = "front";
+  state.isRendering(false);
+  state.isLoading(false);
+};
 // Shared state
 export const state = {
   recordedFrames: Stream([]) as Stream<Array<any>>,
@@ -14,8 +25,9 @@ export const state = {
   videoElement: null as HTMLVideoElement | null,
   canvasElement: null as HTMLCanvasElement | null,
   poseLandmarker: null as PoseLandmarker | null,
-  exerciseHandler: null as Exercise | null,
+  exercise: null as Exercise | null,
   isRendering: Stream(false) as Stream<boolean>,
+  isLoading: Stream(false) as Stream<boolean>,
   cameraPosition: "front",
 };
 
@@ -44,7 +56,7 @@ export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
   });
 };
 export const setExerciseHandler = (exercise: Exercise | null) => {
-  state.exerciseHandler = exercise;
+  state.exercise = exercise;
 };
 // Helper function for converting connections
 export const convertConnections = (connections: [number, number][]) =>

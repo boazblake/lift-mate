@@ -2,9 +2,15 @@ import m from "mithril";
 
 const Tabs = {
   view: ({ children }) => {
-    return m(
-      "ion-tabs",
-      m("ion-content", children),
+    return m("ion-tabs", [
+      m(
+        "ion-content",
+        {
+          id: "mainContent",
+          fullscreen: true,
+        },
+        children
+      ),
       m("ion-tab-bar", { slot: "bottom" }, [
         m("ion-tab-button", { onclick: () => m.route.set("/") }, [
           m("ion-icon", { name: "home" }),
@@ -22,8 +28,8 @@ const Tabs = {
           m("ion-icon", { name: "stats-chart" }),
           m("ion-label", "Progress"),
         ]),
-      ])
-    );
+      ]),
+    ]);
   },
 };
 

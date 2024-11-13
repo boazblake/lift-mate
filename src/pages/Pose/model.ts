@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import m from "mithril";
-import { state, saveRecording } from "./model.utils";
+import { state, saveRecording, resetState } from "./model.utils";
 import { initPoseLandmarker } from "./model.pose";
 
 // Set camera position and flip if on mobile
@@ -14,17 +14,17 @@ export const setCameraHandler = async (position: string) => {
 
 // Start pose detection with platform-specific camera setup
 export const startDetection = async () => {
+  state.isLoading(true);
   console.log("Starting detection, current app state:", state.appState());
 
   if (state.appState() === "Pre") {
-    state.appState("Streaming");
-    state.recordedFrames([]);
-
     // Start platform-specific camera and render loop
     if (Capacitor.getPlatform() === "web") {
       const webModule = await import("./model.web");
       await webModule.startCameraForWeb();
       await initPoseLandmarker();
+      state.appState("Streaming");
+      state.isLoading(false);
       webModule.renderLoopForWeb();
     } else {
       const nativeModule = await import("./model.native");
@@ -40,6 +40,8 @@ export const startDetection = async () => {
       }
 
       console.log("Starting mobile render loop");
+      state.appState("Streaming");
+      state.isLoading(false);
       nativeModule.renderLoopForMobile(ctx);
     }
   }
@@ -59,6 +61,6 @@ export const stopDetection = async () => {
   }
 
   // Save the recording
-  saveRecording();
-  state.appState("Pre");
+  await saveRecording();
+  resetState();
 };
