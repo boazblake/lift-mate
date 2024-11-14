@@ -14,6 +14,7 @@ export const resetState = () => {
   state.appState("Pre");
   state.exercise = null;
   state.cameraPosition = "front";
+  state.numberOfCameras = 0;
   state.isRendering(false);
   state.isLoading(false);
 
@@ -61,6 +62,7 @@ export const state = {
   isRendering: Stream(false) as Stream<boolean>,
   isLoading: Stream(false) as Stream<boolean>,
   cameraPosition: "rear",
+  numberOfCameras: 0,
 };
 
 // Add a pose to recorded frames

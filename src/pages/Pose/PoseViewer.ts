@@ -1,5 +1,10 @@
 import m from "mithril";
-import { startDetection, stopDetection, setCameraHandler } from "./model";
+import {
+  startDetection,
+  stopDetection,
+  setCameraHandler,
+  hasMultipleCameras,
+} from "./model";
 import { setExerciseHandler, state } from "./model.utils";
 import { Exercise } from "./types";
 import { SquatExercise } from "./exercises/squat";
@@ -65,6 +70,7 @@ const PoseViewer = () => {
 
           // Camera FAB for toggling front/rear, only in Streaming state
           state.appState() === "Streaming" &&
+            hasMultipleCameras() &&
             m(
               "ion-fab",
               {
@@ -79,8 +85,7 @@ const PoseViewer = () => {
                     onclick: () => {
                       const currentCamera =
                         state.cameraPosition === "front" ? "rear" : "front";
-                      state.cameraPosition = currentCamera;
-                      m.redraw();
+                      setCameraHandler(currentCamera);
                     },
                   },
                   [
