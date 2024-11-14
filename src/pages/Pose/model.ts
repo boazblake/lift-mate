@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import m from "mithril";
 import { state, saveRecording, resetState } from "./model.utils";
 import { initPoseLandmarker } from "./model.pose";
+import { startCameraForWeb, stopCameraForWeb } from "./model.web";
 
 // Set camera position and flip if on mobile
 export const setCameraHandler = async (position: string) => {
@@ -9,6 +10,10 @@ export const setCameraHandler = async (position: string) => {
   if (Capacitor.getPlatform() !== "web") {
     const { flipCameraForMobile } = await import("./model.native");
     await flipCameraForMobile();
+  } else {
+    await stopCameraForWeb();
+
+    await startCameraForWeb();
   }
 };
 
@@ -19,6 +24,7 @@ export const startDetection = async () => {
   m.redraw(); // Force view update after setting isLoading
 
   if (state.appState() === "Pre") {
+    await calculateNumberOfCameras();
     if (Capacitor.getPlatform() === "web") {
       const webModule = await import("./model.web");
       await webModule.startCameraForWeb();
@@ -42,6 +48,24 @@ export const startDetection = async () => {
   }
 };
 
+export const hasMultipleCameras = () =>
+  Capacitor.getPlatform() === "web" ? state.numberOfCameras > 1 : true;
+
+const calculateNumberOfCameras = async () => {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputDevices = devices.filter(
+      (device) => device.kind === "videoinput"
+    );
+
+    // Set the number of video input devices (cameras) in state
+    state.numberOfCameras = videoInputDevices.length;
+  } catch (error) {
+    console.error("Error enumerating devices:", error);
+    state.numberOfCameras = 0; // Set to 0 if there was an error
+  }
+};
+
 // Stop pose detection and save recordings
 export const stopDetection = async () => {
   state.isRendering(false);
@@ -56,8 +80,7 @@ export const stopDetection = async () => {
 
   // Platform-specific camera stop
   if (Capacitor.getPlatform() === "web") {
-    const webModule = await import("./model.web");
-    await webModule.stopCameraForWeb();
+    await stopCameraForWeb();
   } else {
     const nativeModule = await import("./model.native");
     await nativeModule.stopCameraForMobile();
