@@ -3,7 +3,7 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (6.0.1):
     - Capacitor
-  - CapacitorCamera (6.0.2):
+  - CapacitorCamera (6.1.0):
     - Capacitor
   - CapacitorCommunityCameraPreview (6.0.0):
     - Capacitor
@@ -61,7 +61,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Capacitor: 679f9673fdf30597493a6362a5d5bf233d46abc2
   CapacitorApp: 0bc633b4eae40a1f32cd2834788fad3bc42da6a1
-  CapacitorCamera: ed022171dbf3853e68eec877b4d78995378af6b7
+  CapacitorCamera: 81ce64062cd82b82cc75a79616fda4bd09d7f643
   CapacitorCommunityCameraPreview: 9319cde1da660b7643833dac20aaa85135bd1441
   CapacitorCordova: f48c89f96c319101cd2f0ce8a2b7449b5fb8b3dd
   CapacitorFilesystem: 37fb3aa5c945b4539ab11c74a5c57925a302bf24
