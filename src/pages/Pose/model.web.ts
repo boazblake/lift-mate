@@ -5,7 +5,12 @@ import { Pose } from "./types";
 export const startCameraForWeb = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720, frameRate: { ideal: 30, max: 30 } },
+      video: {
+        facingMode: state.cameraPosition == "rear" ? "environment" : "user",
+        width: 1280,
+        height: 720,
+        frameRate: { ideal: 30, max: 30 },
+      },
     });
     if (state.videoElement) {
       state.videoElement.srcObject = stream;

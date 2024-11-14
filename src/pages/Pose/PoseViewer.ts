@@ -3,7 +3,6 @@ import { startDetection, stopDetection, setCameraHandler } from "./model";
 import { setExerciseHandler, state } from "./model.utils";
 import { Exercise } from "./types";
 import { SquatExercise } from "./exercises/squat";
-import { Capacitor } from "@capacitor/core";
 
 const exercises: Exercise[] = [SquatExercise];
 
@@ -65,8 +64,7 @@ const PoseViewer = () => {
           }),
 
           // Camera FAB for toggling front/rear, only in Streaming state
-          Capacitor.getPlatform() !== "web" &&
-            state.appState() === "Streaming" &&
+          state.appState() === "Streaming" &&
             m(
               "ion-fab",
               {
@@ -81,8 +79,8 @@ const PoseViewer = () => {
                     onclick: () => {
                       const currentCamera =
                         state.cameraPosition === "front" ? "rear" : "front";
-                      setCameraHandler(currentCamera);
                       state.cameraPosition = currentCamera;
+                      m.redraw();
                     },
                   },
                   [
