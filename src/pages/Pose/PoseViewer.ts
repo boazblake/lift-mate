@@ -67,7 +67,7 @@ const PoseViewer = () => {
               border: "1px solid #ccc",
             },
           }),
-
+          state.numberOfCameras,
           // Camera FAB for toggling front/rear, only in Streaming state
           state.appState() === "Streaming" &&
             hasMultipleCameras() &&
