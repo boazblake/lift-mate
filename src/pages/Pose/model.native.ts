@@ -2,7 +2,7 @@ import {
   CameraPreview,
   CameraPreviewOptions,
 } from "@capacitor-community/camera-preview";
-import { state, addPose, drawLandmarks } from "./model.utils";
+import { state, addPose, drawLandmarks, resetState } from "./model.utils";
 import { Pose } from "./types";
 
 // Start the mobile camera
@@ -14,6 +14,7 @@ export const startCameraForMobile = async () => {
     parent: "video-feed",
     toBack: true,
     disableAudio: true,
+    enableHighResolution: true,
   };
   try {
     await CameraPreview.stop(); // Stop if already running
@@ -42,6 +43,8 @@ export const renderLoopForMobile = async (
       console.log(
         "Stopping mobile render loop - rendering stopped or poseLandmarker not available."
       );
+
+      resetState();
       return;
     }
 
@@ -55,8 +58,7 @@ export const renderLoopForMobile = async (
           "Error capturing frame from CameraPreview:",
           captureError
         );
-        state.isRendering(false);
-        state.appState("Pre");
+        resetState();
         return;
       }
 
@@ -66,8 +68,7 @@ export const renderLoopForMobile = async (
         image = await base64ToImage(frame.value);
       } catch (imageError) {
         console.error("Error converting base64 to image:", imageError);
-        state.isRendering(false);
-        state.appState("Pre");
+        resetState();
         return;
       }
 
@@ -98,16 +99,14 @@ export const renderLoopForMobile = async (
         }
       } catch (detectionError) {
         console.error("Error during pose detection:", detectionError);
-        state.isRendering(false);
-        state.appState("Pre");
+        resetState();
         return;
       }
 
       requestAnimationFrame(processFrame); // Continue loop if no errors
     } catch (generalError) {
       console.error("Unexpected error in mobile render loop:", generalError);
-      state.isRendering(false);
-      state.appState("Pre"); // Revert to Pre state on any unexpected error
+      resetState();
     }
   };
 

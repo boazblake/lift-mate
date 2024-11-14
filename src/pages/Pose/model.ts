@@ -13,36 +13,31 @@ export const setCameraHandler = async (position: string) => {
 };
 
 // Start pose detection with platform-specific camera setup
+
 export const startDetection = async () => {
   state.isLoading(true);
-  console.log("Starting detection, current app state:", state.appState());
+  m.redraw(); // Force view update after setting isLoading
 
   if (state.appState() === "Pre") {
-    // Start platform-specific camera and render loop
     if (Capacitor.getPlatform() === "web") {
       const webModule = await import("./model.web");
       await webModule.startCameraForWeb();
       await initPoseLandmarker();
-      state.appState("Streaming");
       state.isLoading(false);
+      state.isRendering(true);
+      state.appState("Streaming");
+      m.redraw(); // Ensure view is updated after state changes
       webModule.renderLoopForWeb();
     } else {
       const nativeModule = await import("./model.native");
       await nativeModule.startCameraForMobile();
-      console.log("Camera preview started on mobile");
-
-      // Initialize PoseLandmarker and confirm availability of canvas context
       await initPoseLandmarker();
-      const ctx = state.canvasElement?.getContext("2d");
-      if (!ctx) {
-        console.error("Canvas context not available on mobile.");
-        return;
-      }
-
-      console.log("Starting mobile render loop");
-      state.appState("Streaming");
       state.isLoading(false);
-      nativeModule.renderLoopForMobile(ctx);
+      state.isRendering(true);
+      state.appState("Streaming");
+      m.redraw(); // Ensure view is updated after state changes
+      const ctx = state.canvasElement?.getContext("2d");
+      if (ctx) nativeModule.renderLoopForMobile(ctx);
     }
   }
 };
@@ -50,6 +45,14 @@ export const startDetection = async () => {
 // Stop pose detection and save recordings
 export const stopDetection = async () => {
   state.isRendering(false);
+  m.redraw(); // Update the view to stop rendering
+
+  // Prompt the user to confirm saving
+  const shouldSave = window.confirm("Do you want to save the recording?");
+
+  if (shouldSave) {
+    await saveRecording();
+  }
 
   // Platform-specific camera stop
   if (Capacitor.getPlatform() === "web") {
@@ -60,7 +63,6 @@ export const stopDetection = async () => {
     await nativeModule.stopCameraForMobile();
   }
 
-  // Save the recording
-  await saveRecording();
-  resetState();
+  resetState(); // Reset to initial state
+  m.redraw(); // Ensure the view updates after stopping detection
 };

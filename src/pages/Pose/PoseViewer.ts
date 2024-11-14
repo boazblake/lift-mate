@@ -22,14 +22,14 @@ const PoseViewer = () => {
             "ion-select",
             {
               class: "exercise-select",
-              value: state.exercise, // Bind selected value to state if needed
-              placeholder: "Select Exercise", // Placeholder text
-              interface: "popover", // Optional: defines the selection interface
+              value: state.exercise,
+              placeholder: "Select Exercise",
+              interface: "popover",
               onchange: (e: Event) => {
                 const selectedName = (e.target as HTMLIonSelectElement).value;
                 const selectedExercise =
                   exercises.find((ex) => ex.name === selectedName) || null;
-                setExerciseHandler(selectedExercise); // Set chosen exercise
+                setExerciseHandler(selectedExercise);
               },
             },
             [
@@ -39,6 +39,7 @@ const PoseViewer = () => {
               ),
             ]
           ),
+
           m("video", {
             oncreate: ({ dom }: { dom: HTMLVideoElement }) => {
               state.videoElement = dom;
@@ -46,8 +47,9 @@ const PoseViewer = () => {
             playsinline: true,
             autoplay: true,
             muted: true,
-            style: { display: "none" }, // Hidden for mobile; used in web render loop
+            style: { display: "none" },
           }),
+
           m("canvas", {
             oncreate: ({ dom }: { dom: HTMLCanvasElement }) => {
               state.canvasElement = dom;
@@ -62,10 +64,16 @@ const PoseViewer = () => {
             },
           }),
 
+          // Camera FAB for toggling front/rear, only in Streaming state
           Capacitor.getPlatform() !== "web" &&
+            state.appState() === "Streaming" &&
             m(
               "ion-fab",
-              { vertical: "top", horizontal: "start", slot: "stacked" },
+              {
+                vertical: "top",
+                horizontal: "start",
+                style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
+              },
               [
                 m(
                   "ion-fab-button",
@@ -73,7 +81,7 @@ const PoseViewer = () => {
                     onclick: () => {
                       const currentCamera =
                         state.cameraPosition === "front" ? "rear" : "front";
-                      setCameraHandler(currentCamera); // Toggles camera position
+                      setCameraHandler(currentCamera);
                       state.cameraPosition = currentCamera;
                     },
                   },
@@ -88,35 +96,30 @@ const PoseViewer = () => {
                 ),
               ]
             ),
-          state.appState() !== "Streaming" && [
-            !state.isLoading()
-              ? m(
-                  "ion-fab",
+
+          // Centered FAB: displays "start", spinner, or nothing based on state
+          state.appState() === "Pre" &&
+            m(
+              "ion-fab",
+              { vertical: "center", horizontal: "center", slot: "fixed" },
+              [
+                m(
+                  "ion-fab-button",
                   {
-                    vertical: "center",
-                    horizontal: "center",
-                    slot: "fixed",
+                    style: { width: "200px", height: "200px" },
+                    onclick: async () => {
+                      if (state.videoElement && state.canvasElement) {
+                        state.isLoading(true);
+                        await startDetection(); // Initiates detection
+                      }
+                    },
                   },
-                  [
-                    m(
-                      "ion-fab-button",
-                      {
-                        style: {
-                          width: "200px",
-                          height: "200px",
-                        },
-                        onclick: async () => {
-                          if (state.videoElement && state.canvasElement) {
-                            await startDetection(); // Initiates detection
-                          }
-                        },
-                      },
-                      "start"
-                    ),
-                  ]
-                )
-              : m("ion-spinner"),
-          ],
+                  state.isLoading() ? m("ion-spinner") : "start"
+                ),
+              ]
+            ),
+
+          // Stop Button, visible only in Streaming state
           state.appState() === "Streaming" &&
             m(
               "ion-fab",
@@ -125,8 +128,12 @@ const PoseViewer = () => {
                 m(
                   "ion-fab-button",
                   {
+                    download: true,
+                    style: {
+                      marginBottom: "calc(var(--ion-safe-area-bottom) + 100px)",
+                    },
                     onclick: async () => {
-                      if (state.videoElement) await stopDetection(); // Stops detection
+                      if (state.videoElement) await stopDetection();
                     },
                   },
                   "Stop"

@@ -1,3 +1,4 @@
+import m from "mithril";
 import Stream from "mithril-stream";
 import { Pose, Exercise } from "./types";
 import {
@@ -6,17 +7,47 @@ import {
 } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-
+import { CameraPreview } from "@capacitor-community/camera-preview";
 export const resetState = () => {
+  // Clear recorded frames and reset state variables
   state.recordedFrames([]);
   state.appState("Pre");
-  state.videoElement = null;
-  state.canvasElement = null;
-  state.poseLandmarker = null;
   state.exercise = null;
   state.cameraPosition = "front";
   state.isRendering(false);
   state.isLoading(false);
+
+  // // Reset video element
+  if (state.videoElement) {
+    CameraPreview.stop(); // Stop if already running
+    // Stop any active media tracks if not already stopped
+    if (state.videoElement.srcObject) {
+      (state.videoElement.srcObject as MediaStream)
+        .getTracks()
+        .forEach((track) => track.stop());
+      state.videoElement.srcObject = null; // Clear the video source
+    }
+    state.videoElement = null; // Nullify the reference
+  }
+
+  // Reset canvas element
+  if (state.canvasElement) {
+    const ctx = state.canvasElement.getContext("2d");
+    if (ctx) {
+      // Clear the canvas content
+      ctx.clearRect(
+        0,
+        0,
+        state.canvasElement.width,
+        state.canvasElement.height
+      );
+    }
+    state.canvasElement = null; // Nullify the reference
+  }
+
+  // Reset poseLandmarker
+  state.poseLandmarker = null;
+  m.redraw();
 };
 // Shared state
 export const state = {
