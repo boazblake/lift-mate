@@ -57,7 +57,7 @@ const calculateNumberOfCameras = async () => {
     const videoInputDevices = devices.filter(
       (device) => device.kind === "videoinput"
     );
-
+    console.log(devices, videoInputDevices);
     // Set the number of video input devices (cameras) in state
     state.numberOfCameras = videoInputDevices.length;
   } catch (error) {
