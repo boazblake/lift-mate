@@ -19,6 +19,7 @@ export const resetState = () => {
 
   // // Reset video element
   if (state.videoElement) {
+    console.log(state);
     CameraPreview.stop(); // Stop if already running
     // Stop any active media tracks if not already stopped
     if (state.videoElement.srcObject) {
@@ -59,7 +60,7 @@ export const state = {
   exercise: null as Exercise | null,
   isRendering: Stream(false) as Stream<boolean>,
   isLoading: Stream(false) as Stream<boolean>,
-  cameraPosition: "front",
+  cameraPosition: "rear",
 };
 
 // Add a pose to recorded frames

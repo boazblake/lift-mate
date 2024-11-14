@@ -15,6 +15,7 @@ export const startCameraForMobile = async () => {
     toBack: true,
     disableAudio: true,
     enableHighResolution: true,
+    rotateWhenOrientationChanged: true,
   };
   try {
     await CameraPreview.stop(); // Stop if already running
@@ -35,6 +36,7 @@ export const renderLoopForMobile = async (
 ) => {
   if (!ctx) {
     console.error("Canvas context not available in render loop.");
+    resetState();
     return;
   }
 
@@ -45,7 +47,6 @@ export const renderLoopForMobile = async (
       );
 
       resetState();
-      return;
     }
 
     try {
