@@ -1,4 +1,4 @@
-import { state, addPose, drawLandmarks } from "./model.utils";
+import { state, addPose, drawLandmarks, resetState } from "./model.utils";
 import { Pose } from "./types";
 
 // Start the web camera
@@ -24,9 +24,10 @@ export const renderLoopForWeb = async () => {
     !state.poseLandmarker ||
     !state.canvasElement ||
     !state.videoElement
-  )
+  ) {
+    resetState();
     return;
-
+  }
   const ctx = state.canvasElement.getContext("2d");
   const processFrame = async () => {
     if (ctx && state.canvasElement && state.videoElement) {
@@ -46,17 +47,26 @@ export const renderLoopForWeb = async () => {
     }
 
     const videoTime = performance.now() / 1000;
-    const results = await state.poseLandmarker.detectForVideo(
-      state.videoElement,
-      videoTime
-    );
-    if (results?.landmarks?.length && ctx) {
-      state.isLoading(false);
-      results.landmarks.forEach((pose: Pose) => addPose(pose));
-      drawLandmarks(ctx, results.landmarks);
+
+    try {
+      const results = await state.poseLandmarker.detectForVideo(
+        state.videoElement,
+        videoTime
+      );
+
+      if (results?.landmarks?.length && ctx) {
+        state.isLoading(false);
+        results.landmarks.forEach((pose: Pose) => addPose(pose));
+        drawLandmarks(ctx, results.landmarks);
+      }
+      //needed for update
+      requestAnimationFrame(processFrame);
+    } catch (error) {
+      // console.error("state.poseLandmarker does not exist, resetting", error);
+      return resetState();
     }
-    requestAnimationFrame(processFrame);
   };
+  //needed for first display
   requestAnimationFrame(processFrame);
 };
 
