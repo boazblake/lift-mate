@@ -2,6 +2,7 @@
 import m from "mithril";
 import Stream from "mithril-stream";
 import { DrawingUtils } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
+import { RawExerciseData } from "../Pose/types";
 
 // Type Definitions
 export type Pose = Array<{
@@ -30,12 +31,17 @@ const convertedPoseConnections = (window as any).POSE_CONNECTIONS.map(
 
 // Canvas Reference
 let canvasElement: HTMLCanvasElement | null = null;
+let exrxData: RawExerciseData | null = null;
 
 /**
  * Loads the recording data into playbackPoses.
  * @param data - Array of PoseFrame objects.
  */
-export const loadRecordingData = (data: PoseFrame[]) => {
+export const loadRecordingData = (
+  data: PoseFrame[],
+  rawExrxData: RawExerciseData
+) => {
+  exrxData = rawExrxData;
   if (!Array.isArray(data)) {
     console.error(
       "Invalid data format: Expected an array of PoseFrame objects."
@@ -171,6 +177,11 @@ export const drawPose = (pose: Pose) => {
     color: "green",
     lineWidth: 3,
   });
+
+  if (exrxData) {
+    console.log(exrxData);
+  }
+
   m.redraw();
 };
 

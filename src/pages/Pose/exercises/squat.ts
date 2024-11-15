@@ -1,27 +1,17 @@
 import { Exercise } from "../types";
 import { DrawingUtils } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
+import { calculateAngle, updateRawProp } from "./utils";
 
-// Helper function to calculate the angle between three points
-const calculateAngle = (
-  pointA: { x: number; y: number },
-  pointB: { x: number; y: number },
-  pointC: { x: number; y: number }
-): number => {
-  const radians =
-    Math.atan2(pointC.y - pointB.y, pointC.x - pointB.x) -
-    Math.atan2(pointA.y - pointB.y, pointA.x - pointB.x);
-  let angle = Math.abs((radians * 180.0) / Math.PI);
-  if (angle > 180.0) {
-    angle = 360 - angle;
-  }
-  return angle;
-};
-
-// Variables for rep counting and tracking
-let lastSquatStatus = "Standing";
-let repCount = 0;
-
+// Initial properties setup
 export const SquatExercise: Exercise = {
+  raw: {
+    repCount: [{ value: 0, timestamp: performance.now() / 1000 }],
+    lastSquatStatus: [
+      { value: "Standing", timestamp: performance.now() / 1000 },
+    ],
+    squatStatus: [{ value: "Standing", timestamp: performance.now() / 1000 }],
+    isBadPose: [{ value: false, timestamp: performance.now() / 1000 }],
+  },
   name: "Squat",
   processLandmarks: (landmarks, canvasCtx) => {
     if (!landmarks || landmarks.length === 0) {
@@ -45,70 +35,64 @@ export const SquatExercise: Exercise = {
     const averageKneeAngle = (leftKneeAngle + rightKneeAngle) / 2;
 
     // Classify squat status based on knee angle
-    let squatStatus = "Standing";
+    let currentSquatStatus = "Standing";
     if (averageKneeAngle < 90) {
-      squatStatus = "Squatting";
+      currentSquatStatus = "Squatting";
     } else if (averageKneeAngle < 160) {
-      squatStatus = "Half Squat";
+      currentSquatStatus = "Half Squat";
     }
 
-    // Rep counting logic
-    if (lastSquatStatus === "Squatting" && squatStatus === "Standing") {
-      repCount += 1;
+    // Update rep count and squat status
+    if (
+      SquatExercise.raw.lastSquatStatus.at(-1)?.value === "Squatting" &&
+      currentSquatStatus === "Standing"
+    ) {
+      updateRawProp(
+        SquatExercise.raw,
+        "repCount",
+        (SquatExercise.raw.repCount.at(-1)?.value as number) + 1
+      );
     }
-    lastSquatStatus = squatStatus;
-
-    // Provide visual feedback on the canvas
-    canvasCtx.save();
+    updateRawProp(SquatExercise.raw, "squatStatus", currentSquatStatus);
+    updateRawProp(SquatExercise.raw, "lastSquatStatus", currentSquatStatus);
 
     // Determine color based on squat status
-    let connectorColor = "white"; // Default color
-
-    if (squatStatus === "Standing" || squatStatus === "Squatting") {
-      // At the top or bottom of the movement
+    let connectorColor = "white";
+    if (
+      currentSquatStatus === "Standing" ||
+      currentSquatStatus === "Squatting"
+    ) {
       connectorColor = "blue";
-    } else if (squatStatus === "Half Squat") {
-      // In between top and bottom
+    } else if (currentSquatStatus === "Half Squat") {
       connectorColor = "white";
     }
 
     // Bad pose detection (e.g., excessive forward lean)
-    let isBadPose = false;
-
-    // Calculate torso angle (hip-shoulder angle)
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
-
-    // Average hip and shoulder positions
     const averageHip = {
       x: (leftHip.x + rightHip.x) / 2,
       y: (leftHip.y + rightHip.y) / 2,
     };
-
     const averageShoulder = {
       x: (leftShoulder.x + rightShoulder.x) / 2,
       y: (leftShoulder.y + rightShoulder.y) / 2,
     };
-
-    // Calculate torso angle
     const torsoAngle = calculateAngle(
-      { x: averageHip.x, y: averageHip.y + 0.1 }, // Slightly offset to create a vertical reference
+      { x: averageHip.x, y: averageHip.y + 0.1 },
       averageHip,
       averageShoulder
     );
+    const isBadPose = torsoAngle < 70;
+    updateRawProp(SquatExercise.raw, "isBadPose", isBadPose);
 
-    // Check for excessive forward lean (e.g., torso angle less than 70 degrees)
-    if (torsoAngle < 70) {
-      isBadPose = true;
+    if (isBadPose) {
       connectorColor = "red";
     }
 
     // Draw landmarks and connectors
     const drawingUtils = new DrawingUtils(canvasCtx);
-    drawingUtils.drawLandmarks(landmarks, {
-      color: "white", // Landmarks stay white
-      lineWidth: 2,
-    });
+    drawingUtils.drawLandmarks(landmarks, { color: "white", lineWidth: 2 });
     drawingUtils.drawConnectors(landmarks, window.POSE_CONNECTIONS, {
       color: connectorColor,
       lineWidth: 2,
@@ -117,10 +101,18 @@ export const SquatExercise: Exercise = {
     // Display squat status and rep count
     canvasCtx.font = "30px Arial";
     canvasCtx.fillStyle = "yellow";
-    canvasCtx.fillText(`Status: ${squatStatus}`, 10, 30);
-    canvasCtx.fillText(`Reps: ${repCount}`, 10, 70);
+    canvasCtx.fillText(
+      `Status: ${SquatExercise.raw.squatStatus.at(-1)?.value}`,
+      10,
+      30
+    );
+    canvasCtx.fillText(
+      `Reps: ${SquatExercise.raw.repCount.at(-1)?.value}`,
+      10,
+      70
+    );
 
-    if (isBadPose) {
+    if (SquatExercise.raw.isBadPose.at(-1)?.value) {
       canvasCtx.fillStyle = "red";
       canvasCtx.fillText(`Bad Pose Detected!`, 10, 110);
     }

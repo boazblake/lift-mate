@@ -1,3 +1,5 @@
+import { NormalizedLandmark } from "@mediapipe/tasks-vision";
+
 // Represents a single landmark with XYZ coordinates
 export type Landmark = {
   x: number;
@@ -6,7 +8,7 @@ export type Landmark = {
 };
 
 // Represents a collection of landmarks for a single frame
-export type Pose = Array<Landmark>;
+export type Pose = Array<NormalizedLandmark>;
 export type Poses = Array<Pose>;
 // Represents a single frame with timestamp and one or more poses
 export interface PoseFrame {
@@ -14,10 +16,17 @@ export interface PoseFrame {
   poses: Poses; // Array of poses (e.g., multiple people or poses per frame)
 }
 
+export type RawExerciseData = Array<{
+  value: string | number | boolean;
+  timestamp: number;
+}>;
+
+export type RawExercise = Record<string, RawExerciseData>;
 export interface Exercise {
+  raw: RawExercise;
   name: string;
   processLandmarks: (
-    landmarks: any[],
+    landmarks: NormalizedLandmark[],
     canvasCtx: CanvasRenderingContext2D
   ) => void;
 }

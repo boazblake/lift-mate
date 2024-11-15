@@ -25,7 +25,7 @@ export const startCameraForWeb = async () => {
 export const renderLoopForWeb = async () => {
   console.log("renderLoopForWeb", state);
   if (
-    !state.isRendering ||
+    !state.isRendering() ||
     !state.poseLandmarker ||
     !state.canvasElement ||
     !state.videoElement
@@ -54,7 +54,7 @@ export const renderLoopForWeb = async () => {
     const videoTime = performance.now() / 1000;
 
     try {
-      const results = await state.poseLandmarker.detectForVideo(
+      const results = state.poseLandmarker.detectForVideo(
         state.videoElement,
         videoTime
       );

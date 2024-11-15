@@ -1,4 +1,4 @@
-import m from "mithril";
+import m, { VnodeDOM } from "mithril";
 import {
   startDetection,
   stopDetection,
@@ -8,8 +8,14 @@ import {
 import { setExerciseHandler, state } from "./model.utils";
 import { Exercise } from "./types";
 import { SquatExercise } from "./exercises/squat";
+import { BenchPressExercise } from "./exercises/benchpress";
+import { OverheadPressExercise } from "./exercises/overhead-press";
 
-const exercises: Exercise[] = [SquatExercise];
+const exercises: Exercise[] = [
+  SquatExercise,
+  BenchPressExercise,
+  OverheadPressExercise,
+];
 
 const PoseViewer = () => {
   return {
@@ -26,10 +32,10 @@ const PoseViewer = () => {
             "ion-select",
             {
               class: "exercise-select",
-              value: state.exercise,
+              value: state.exercise?.name,
               placeholder: "Select Exercise",
               interface: "popover",
-              onchange: (e: Event) => {
+              onionChange: (e: Event) => {
                 const selectedName = (e.target as HTMLIonSelectElement).value;
                 const selectedExercise =
                   exercises.find((ex) => ex.name === selectedName) || null;
@@ -39,14 +45,20 @@ const PoseViewer = () => {
             [
               m("ion-select-option", { value: "" }, "Select Exercise"),
               ...exercises.map((ex) =>
-                m("ion-select-option", { value: ex.name }, ex.name)
+                m(
+                  "ion-select-option",
+                  {
+                    value: ex.name,
+                  },
+                  ex.name
+                )
               ),
             ]
           ),
 
           m("video", {
-            oncreate: ({ dom }: { dom: HTMLVideoElement }) => {
-              state.videoElement = dom;
+            oncreate: ({ dom }: VnodeDOM) => {
+              state.videoElement = dom as HTMLVideoElement;
             },
             playsinline: true,
             autoplay: true,
@@ -55,8 +67,8 @@ const PoseViewer = () => {
           }),
 
           m("canvas", {
-            oncreate: ({ dom }: { dom: HTMLCanvasElement }) => {
-              state.canvasElement = dom;
+            oncreate: ({ dom }: VnodeDOM) => {
+              state.canvasElement = dom as HTMLCanvasElement;
             },
             width: "1280px",
             height: "720px",
