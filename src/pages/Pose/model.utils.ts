@@ -8,6 +8,8 @@ import {
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { CameraPreview } from "@capacitor-community/camera-preview";
+import { Capacitor } from "@capacitor/core";
+
 export const resetState = () => {
   // Clear recorded frames and reset state variables
   state.recordedFrames([]);
@@ -53,7 +55,7 @@ export const resetState = () => {
 };
 // Shared state
 export const state = {
-  recordedFrames: Stream([]) as Stream<Array<any>>,
+  recordedFrames: Stream([]) as Stream<Array<any> | []>,
   appState: Stream("Pre" as "Pre" | "Streaming"),
   videoElement: null as HTMLVideoElement | null,
   canvasElement: null as HTMLCanvasElement | null,
@@ -87,6 +89,10 @@ export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
         lineWidth: 2,
       }
     );
+
+    if (state.exercise) {
+      state.exercise.processLandmarks(pose, ctx);
+    }
   });
 };
 export const setExerciseHandler = (exercise: Exercise | null) => {
@@ -98,7 +104,11 @@ export const convertConnections = (connections: [number, number][]) =>
 
 export const saveRecording = async () => {
   try {
-    const data = JSON.stringify(state.recordedFrames(), null, 2);
+    const data = JSON.stringify(
+      [state.recordedFrames(), state.exercise?.raw || {}],
+      null,
+      2
+    );
     const fileName = `pose_recording_${new Date().toISOString()}.json`;
 
     // Write to filesystem
@@ -109,13 +119,25 @@ export const saveRecording = async () => {
       encoding: Encoding.UTF8,
     });
 
-    // Share the saved file
-    await Share.share({
-      title: "Pose Recording",
-      url: fileUri.uri,
-      dialogTitle: "Share Pose Recording",
-    });
-    console.log("Recording saved and shared successfully:", fileUri.uri);
+    if (Capacitor.getPlatform() === "web") {
+      // If platform is web, create a downloadable link
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url); // Cleanup
+      console.log("File saved for web as downloadable link");
+    } else {
+      // For native platforms, use the Share API
+      await Share.share({
+        title: "Pose Recording",
+        url: fileUri.uri,
+        dialogTitle: "Share Pose Recording",
+      });
+      console.log("Recording saved and shared successfully:", fileUri.uri);
+    }
   } catch (error) {
     console.error("Error saving or sharing recording:", error);
   }
