@@ -1,5 +1,5 @@
 import { state, addPose, drawLandmarks, resetState } from "./model.utils";
-import { Pose } from "./types";
+import { Pose } from "@/types";
 
 // Start the web camera
 export const startCameraForWeb = async () => {

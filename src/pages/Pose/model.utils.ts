@@ -1,6 +1,6 @@
 import m from "mithril";
 import Stream from "mithril-stream";
-import { Pose, Exercise } from "./types";
+import { Pose, Exercise } from "@/types";
 import {
   PoseLandmarker,
   DrawingUtils,
@@ -105,7 +105,7 @@ export const convertConnections = (connections: [number, number][]) =>
 export const saveRecording = async () => {
   try {
     const data = JSON.stringify(
-      [state.recordedFrames(), state.exercise?.raw || {}],
+      [state.recordedFrames(), state.exercise?.meta || {}],
       null,
       2
     );
