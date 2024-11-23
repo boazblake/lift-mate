@@ -28,7 +28,10 @@ const Modal = (attrs: Modal): m.Component<Modal> => {
                 "ion-button",
                 {
                   onclick: () => {
-                    if (modal) modal.dismiss(); // Close the modal
+                    if (modal) {
+                      modal.setAttribute("inert", "true");
+                      modal.dismiss(); // Close the modal
+                    }
                   },
                 },
                 "Close"

@@ -15,13 +15,8 @@ import {
   stopPlayback,
   setPlaybackSpeed,
   drawPose,
-} from "./model";
+} from "./model.index";
 
-// Interface for PoseFrame
-interface PoseFrame {
-  timestamp: number;
-  poses: Array<any>;
-}
 const PosePlayback = () => {
   let hasFile = false;
   let isModalVisible = false;
@@ -46,14 +41,6 @@ const PosePlayback = () => {
       };
       reader.readAsText(file);
     }
-  };
-
-  /**
-   * Initializes the component by setting the canvas element.
-   */
-  const oncreate = ({ dom }: { dom: HTMLCanvasElement }) => {
-    setCanvasElement(dom);
-    console.log("Playback Canvas Initialized:", dom); // Added log
   };
 
   /**
@@ -179,112 +166,113 @@ const PosePlayback = () => {
             border: "1px solid #ccc",
             marginTop: "20px",
           },
-          oncreate,
+          oncreate: ({ dom }: { dom: HTMLCanvasElement }) =>
+            setCanvasElement(dom),
         }),
         // Modal usage with custom content, title, and buttons
         isModalVisible &&
-          m(
-            Modal,
-            {
-              title: "Playback Settings",
-              onDismiss: () => {
-                isModalVisible = false;
-                m.redraw();
-              },
+        m(
+          Modal,
+          {
+            title: "Playback Settings",
+            onDismiss: () => {
+              isModalVisible = false;
+              m.redraw();
             },
+          },
+
+          [
+            [
+              // Playback Speed Control
+              m("div.playback-speed", [
+                m("ion-item", [
+                  m("ion-label", { for: "speed-select" }, "Playback Speed: "),
+                  m(
+                    "ion-select#speed-select",
+                    {
+                      onchange: (e: Event) => {
+                        const speed = parseFloat(
+                          (e.target as HTMLSelectElement).value
+                        );
+                        setPlaybackSpeed(speed);
+                        console.log(`Playback speed set to ${speed}x.`);
+                      },
+                      value: playbackSpeed().toString(),
+                      interface: "popover", // Optional: Add interface style
+                    },
+                    [
+                      m("ion-select-option", { value: "0.5" }, "0.5x"),
+                      m("ion-select-option", { value: "1" }, "1x"),
+                      m("ion-select-option", { value: "2" }, "2x"),
+                    ]
+                  ),
+                ]),
+              ]),
+              // Loop Playback Control
+              m("div.loop-playback", [
+                m("ion-item", [
+                  m("ion-label", { for: "loop-playback" }, "Loop Playback: "),
+                  m("ion-checkbox", {
+                    id: "loop-playback",
+                    checked: loopPlayback(),
+                    onchange: (e: Event) => {
+                      const isChecked = (e.target as HTMLInputElement)
+                        .checked;
+                      loopPlayback(isChecked);
+                      console.log(`Loop Playback set to: ${isChecked}`);
+                    },
+                  }),
+                ]),
+              ]),
+              // Playback Information with Ion Range
+              m("div.playback-info", [
+                m("ion-item", [
+                  m(
+                    "ion-label",
+                    { slot: "start" },
+                    `Frame: ${currentFrame() + 1} / ${playbackPoses().length}`
+                  ),
+                  m(
+                    "ion-range",
+                    {
+                      min: 0,
+                      max:
+                        playbackPoses().length > 0
+                          ? playbackPoses().length - 1
+                          : 0,
+                      step: 1,
+                      snaps: true,
+                      value: currentFrame(),
+                      disabled: playbackPoses().length === 0,
+                      onIonChange: handleRangeChange, // Corrected event handler
+                    },
+                    []
+                  ),
+                ]),
+                m("ion-item", `Elapsed Time: ${elapsedTime().toFixed(2)}s`),
+                m("ion-item", `Playback Speed: ${playbackSpeed()}x`),
+              ]),
+            ],
 
             [
-              [
-                // Playback Speed Control
-                m("div.playback-speed", [
-                  m("ion-item", [
-                    m("ion-label", { for: "speed-select" }, "Playback Speed: "),
-                    m(
-                      "ion-select#speed-select",
-                      {
-                        onchange: (e: Event) => {
-                          const speed = parseFloat(
-                            (e.target as HTMLSelectElement).value
-                          );
-                          setPlaybackSpeed(speed);
-                          console.log(`Playback speed set to ${speed}x.`);
-                        },
-                        value: playbackSpeed().toString(),
-                        interface: "popover", // Optional: Add interface style
-                      },
-                      [
-                        m("ion-select-option", { value: "0.5" }, "0.5x"),
-                        m("ion-select-option", { value: "1" }, "1x"),
-                        m("ion-select-option", { value: "2" }, "2x"),
-                      ]
-                    ),
-                  ]),
+              m("div.file-upload", [
+                m("ion-item", [
+                  m(
+                    "ion-label",
+                    { for: "upload-recording" },
+                    "Load Recording: "
+                  ),
+                  m(
+                    "ion-input[type=file][id=upload-recording][accept=application/json]",
+                    {
+                      onchange: handleFileUpload,
+                    }
+                  ),
                 ]),
-                // Loop Playback Control
-                m("div.loop-playback", [
-                  m("ion-item", [
-                    m("ion-label", { for: "loop-playback" }, "Loop Playback: "),
-                    m("ion-checkbox", {
-                      id: "loop-playback",
-                      checked: loopPlayback(),
-                      onchange: (e: Event) => {
-                        const isChecked = (e.target as HTMLInputElement)
-                          .checked;
-                        loopPlayback(isChecked);
-                        console.log(`Loop Playback set to: ${isChecked}`);
-                      },
-                    }),
-                  ]),
-                ]),
-                // Playback Information with Ion Range
-                m("div.playback-info", [
-                  m("ion-item", [
-                    m(
-                      "ion-label",
-                      { slot: "start" },
-                      `Frame: ${currentFrame() + 1} / ${playbackPoses().length}`
-                    ),
-                    m(
-                      "ion-range",
-                      {
-                        min: 0,
-                        max:
-                          playbackPoses().length > 0
-                            ? playbackPoses().length - 1
-                            : 0,
-                        step: 1,
-                        snaps: true,
-                        value: currentFrame(),
-                        disabled: playbackPoses().length === 0,
-                        onIonChange: handleRangeChange, // Corrected event handler
-                      },
-                      []
-                    ),
-                  ]),
-                  m("ion-item", `Elapsed Time: ${elapsedTime().toFixed(2)}s`),
-                  m("ion-item", `Playback Speed: ${playbackSpeed()}x`),
-                ]),
-              ],
-
-              [
-                m("div.file-upload", [
-                  m("ion-item", [
-                    m(
-                      "ion-label",
-                      { for: "upload-recording" },
-                      "Load Recording: "
-                    ),
-                    m(
-                      "ion-input[type=file][id=upload-recording][accept=application/json]",
-                      {
-                        onchange: handleFileUpload,
-                      }
-                    ),
-                  ]),
-                ]),
-              ],
-            ]
-          ),
+              ]),
+            ],
+          ]
+        ),
       ]);
     },
   };

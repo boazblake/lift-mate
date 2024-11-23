@@ -3,7 +3,7 @@ import {
   CameraPreviewOptions,
 } from "@capacitor-community/camera-preview";
 import { state, addPose, drawLandmarks, resetState } from "./model.utils";
-import { Pose } from "./types";
+import { Pose } from "@/types";
 
 // Start the mobile camera
 export const startCameraForMobile = async () => {

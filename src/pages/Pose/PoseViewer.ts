@@ -6,16 +6,11 @@ import {
   hasMultipleCameras,
 } from "./model";
 import { setExerciseHandler, state } from "./model.utils";
-import { Exercise } from "./types";
-import { SquatExercise } from "./exercises/squat";
-import { BenchPressExercise } from "./exercises/benchpress";
-import { OverheadPressExercise } from "./exercises/overhead-press";
-
-const exercises: Exercise[] = [
-  SquatExercise,
-  BenchPressExercise,
-  OverheadPressExercise,
-];
+import { Exercise } from "@/types";
+import * as exrxs from "@/exercises/index";
+console.log(exrxs);
+const exercises = Object.values(exrxs);
+console.log(exercises);
 
 const PoseViewer = () => {
   return {
@@ -32,25 +27,27 @@ const PoseViewer = () => {
             "ion-select",
             {
               class: "exercise-select",
-              value: state.exercise?.name,
+              value: state.exercise?.meta?.name,
               placeholder: "Select Exercise",
               interface: "popover",
               onionChange: (e: Event) => {
                 const selectedName = (e.target as HTMLIonSelectElement).value;
                 const selectedExercise =
-                  exercises.find((ex) => ex.name === selectedName) || null;
+                  exercises.find(
+                    (ex: Exercise) => ex?.meta?.name === selectedName
+                  ) || null;
                 setExerciseHandler(selectedExercise);
               },
             },
             [
               m("ion-select-option", { value: "" }, "Select Exercise"),
-              ...exercises.map((ex) =>
+              ...exercises.map((ex: Exercise) =>
                 m(
                   "ion-select-option",
                   {
-                    value: ex.name,
+                    value: ex.meta?.name,
                   },
-                  ex.name
+                  ex.meta?.name
                 )
               ),
             ]
@@ -82,79 +79,79 @@ const PoseViewer = () => {
           state.numberOfCameras,
           // Camera FAB for toggling front/rear, only in Streaming state
           state.appState() === "Streaming" &&
-            hasMultipleCameras() &&
-            m(
-              "ion-fab",
-              {
-                vertical: "top",
-                horizontal: "start",
-                style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
-              },
-              [
-                m(
-                  "ion-fab-button",
-                  {
-                    onclick: () => {
-                      const currentCamera =
-                        state.cameraPosition === "front" ? "rear" : "front";
-                      setCameraHandler(currentCamera);
-                    },
+          hasMultipleCameras() &&
+          m(
+            "ion-fab",
+            {
+              vertical: "top",
+              horizontal: "start",
+              style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
+            },
+            [
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    const currentCamera =
+                      state.cameraPosition === "front" ? "rear" : "front";
+                    setCameraHandler(currentCamera);
                   },
-                  [
-                    m("ion-icon", {
-                      name:
-                        state.cameraPosition === "front"
-                          ? "camera-reverse"
-                          : "camera",
-                    }),
-                  ]
-                ),
-              ]
-            ),
+                },
+                [
+                  m("ion-icon", {
+                    name:
+                      state.cameraPosition === "front"
+                        ? "camera-reverse"
+                        : "camera",
+                  }),
+                ]
+              ),
+            ]
+          ),
 
           // Centered FAB: displays "start", spinner, or nothing based on state
           state.appState() === "Pre" &&
-            m(
-              "ion-fab",
-              { vertical: "center", horizontal: "center", slot: "fixed" },
-              [
-                m(
-                  "ion-fab-button",
-                  {
-                    style: { width: "200px", height: "200px" },
-                    onclick: async () => {
-                      if (state.videoElement && state.canvasElement) {
-                        state.isLoading(true);
-                        await startDetection(); // Initiates detection
-                      }
-                    },
+          m(
+            "ion-fab",
+            { vertical: "center", horizontal: "center", slot: "fixed" },
+            [
+              m(
+                "ion-fab-button",
+                {
+                  style: { width: "200px", height: "200px" },
+                  onclick: async () => {
+                    if (state.videoElement && state.canvasElement) {
+                      state.isLoading(true);
+                      await startDetection(); // Initiates detection
+                    }
                   },
-                  state.isLoading() ? m("ion-spinner") : "start"
-                ),
-              ]
-            ),
+                },
+                state.isLoading() ? m("ion-spinner") : "start"
+              ),
+            ]
+          ),
 
           // Stop Button, visible only in Streaming state
           state.appState() === "Streaming" &&
-            m(
-              "ion-fab",
-              { vertical: "bottom", horizontal: "end", slot: "fixed" },
-              [
-                m(
-                  "ion-fab-button",
-                  {
-                    download: true,
-                    style: {
-                      marginBottom: "calc(var(--ion-safe-area-bottom) + 100px)",
-                    },
-                    onclick: async () => {
-                      if (state.videoElement) await stopDetection();
-                    },
+          m(
+            "ion-fab",
+            { vertical: "bottom", horizontal: "end", slot: "fixed" },
+            [
+              m(
+                "ion-fab-button",
+                {
+                  download: true,
+                  style: {
+                    marginBottom: "calc(var(--ion-safe-area-bottom) + 100px)",
                   },
-                  "Stop"
-                ),
-              ]
-            ),
+                  onclick: async () => {
+                    if (state.videoElement) await stopDetection();
+                  },
+                },
+                "Stop"
+              ),
+            ]
+          ),
         ]
       );
     },
