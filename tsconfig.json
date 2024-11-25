@@ -25,6 +25,9 @@
       "@components/*": [
         "src/components/*"
       ],
+      "@models/*": [
+        "src/models/*"
+      ],
       "@pages/*": [
         "src/pages/*"
       ],

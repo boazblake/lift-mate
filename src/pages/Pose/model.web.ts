@@ -1,12 +1,17 @@
 import { state, addPose, drawLandmarks, resetState } from "./model.utils";
-import { Pose } from "@/types";
-
+import { HolisticData, Pose } from "@/types";
+import {
+  HandLandmarker,
+  FaceLandmarker,
+  PoseLandmarker,
+  DrawingUtils,
+} from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
 // Start the web camera
 export const startCameraForWeb = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        facingMode: state.cameraPosition == "rear" ? "environment" : "user",
+        facingMode: state.cameraPosition !== "rear" ? "environment" : "user",
         width: 1280,
         height: 720,
         frameRate: { ideal: 30, max: 30 },
@@ -24,6 +29,7 @@ export const startCameraForWeb = async () => {
 // Render loop for web
 export const renderLoopForWeb = async () => {
   console.log("renderLoopForWeb", state);
+
   if (
     !state.isRendering() ||
     !state.poseLandmarker ||
@@ -33,7 +39,9 @@ export const renderLoopForWeb = async () => {
     resetState();
     return;
   }
+
   const ctx = state.canvasElement.getContext("2d");
+
   const processFrame = async () => {
     if (ctx && state.canvasElement && state.videoElement) {
       ctx.clearRect(
@@ -42,6 +50,11 @@ export const renderLoopForWeb = async () => {
         state.canvasElement.width,
         state.canvasElement.height
       );
+
+      // Flip and draw the video feed on the canvas
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.translate(-state.canvasElement.width, 0);
       ctx.drawImage(
         state.videoElement,
         0,
@@ -49,29 +62,21 @@ export const renderLoopForWeb = async () => {
         state.canvasElement.width,
         state.canvasElement.height
       );
+      ctx.restore();
     }
 
-    const videoTime = performance.now() / 1000;
-
+    // Process Holistic detection
     try {
-      const results = state.poseLandmarker.detectForVideo(
-        state.videoElement,
-        videoTime
-      );
-
-      if (results?.landmarks?.length && ctx) {
-        state.isLoading(false);
-        results.landmarks.forEach((pose: Pose) => addPose(pose));
-        drawLandmarks(ctx, results.landmarks);
-      }
-      //needed for update
-      requestAnimationFrame(processFrame);
+      await state.poseLandmarker.send({ image: state.videoElement });
     } catch (error) {
-      // console.error("state.poseLandmarker does not exist, resetting", error);
-      return resetState();
+      console.error("Error during holistic detection:", error);
+      resetState();
+      return;
     }
+
+    requestAnimationFrame(processFrame); // Continue loop
   };
-  //needed for first display
+
   requestAnimationFrame(processFrame);
 };
 

@@ -45,8 +45,8 @@ export const renderLoopForMobile = async (
       console.log(
         "Stopping mobile render loop - rendering stopped or poseLandmarker not available."
       );
-
       resetState();
+      return;
     }
 
     try {
@@ -73,14 +73,20 @@ export const renderLoopForMobile = async (
         return;
       }
 
-      // Clear and draw the frame on canvas
-      if (state.canvasElement) {
+      // Flip and draw the captured image onto the canvas
+      if (ctx && state.canvasElement && image) {
         ctx.clearRect(
           0,
           0,
           state.canvasElement.width,
           state.canvasElement.height
         );
+
+        ctx.save();
+        if (state.cameraPosition == "front") {
+          ctx.scale(-1, 1); // Flip horizontally
+          ctx.translate(-state.canvasElement.width, 0);
+        }
         ctx.drawImage(
           image,
           0,
@@ -88,18 +94,14 @@ export const renderLoopForMobile = async (
           state.canvasElement.width,
           state.canvasElement.height
         );
+        ctx.restore();
       }
 
-      // Run pose detection on the captured image
+      // Run Holistic detection on the captured image
       try {
-        const results = await state.poseLandmarker.detect(image);
-        if (results?.landmarks?.length) {
-          state.isLoading(false);
-          results.landmarks.forEach((pose: Pose) => addPose(pose));
-          drawLandmarks(ctx, results.landmarks);
-        }
+        await state.poseLandmarker.send({ image });
       } catch (detectionError) {
-        console.error("Error during pose detection:", detectionError);
+        console.error("Error during holistic detection:", detectionError);
         resetState();
         return;
       }

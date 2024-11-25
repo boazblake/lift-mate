@@ -178,11 +178,6 @@ export const drawPose = (pose: Pose) => {
     color: "green",
     lineWidth: 3,
   });
-  //
-  // if (isExercise()) {
-  //   console.log(pose);
-  //   // currentExercise().processLandmarks(pose);
-  // }
 
   m.redraw();
 };
