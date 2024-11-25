@@ -53,7 +53,7 @@ export const renderLoopForWeb = async () => {
 
       // Flip and draw the video feed on the canvas
       ctx.save();
-      if (state.cameraPosition == "front") {
+      if (state.cameraPosition == "rear") {
         ctx.scale(-1, 1);
         ctx.translate(-state.canvasElement.width, 0);
       }
