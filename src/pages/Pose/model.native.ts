@@ -83,10 +83,10 @@ export const renderLoopForMobile = async (
         );
 
         ctx.save();
-        if (state.cameraPosition == "front") {
-          ctx.scale(-1, 1); // Flip horizontally
-          ctx.translate(-state.canvasElement.width, 0);
-        }
+        // if (state.cameraPosition == "front") {
+        ctx.scale(-1, 1); // Flip horizontally
+        ctx.translate(-state.canvasElement.width, 0);
+        // }
         ctx.drawImage(
           image,
           0,

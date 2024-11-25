@@ -95,13 +95,14 @@ export const drawLandmarks = (
   options = {
     pose: { color: "red", radius: 5, lineWidth: 2 },
     hands: { color: "green", radius: 5, lineWidth: 2 },
-    face: { color: "yellow", radius: 1, lineWidth: 1 },
+    face: { color: "white", radius: 1, lineWidth: 1 },
   }
 ) => {
   const drawingUtils = new DrawingUtils(ctx);
-
   // Draw Pose Landmarks
+  // remove face
   if (results.poseLandmarks) {
+    console.log(results.poseLandmarks);
     drawingUtils.drawLandmarks(results.poseLandmarks, {
       color: options.pose.color,
       radius: options.pose.radius,
@@ -160,12 +161,40 @@ export const drawLandmarks = (
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
+      convertConnections(window.FACEMESH_CONTOURS),
+      {
+        color: "green",
+        lineWidth: options.face.lineWidth,
+      }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
       convertConnections(window.FACEMESH_LIPS),
       { color: "pink", lineWidth: options.face.lineWidth }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_LEFT_EYE),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_LEFT_EYEBROW),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_LEFT_IRIS),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_RIGHT_EYEBROW),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_RIGHT_IRIS),
       { color: "cyan", lineWidth: options.face.lineWidth }
     );
     drawingUtils.drawConnectors(
@@ -181,20 +210,20 @@ export const drawLandmarks = (
   }
 
   // Call exercise-specific processing if available
-  if (state.exercise) {
-    if (results.poseLandmarks) {
-      state.exercise.processLandmarks(results.poseLandmarks, ctx);
-    }
-    if (results.leftHandLandmarks) {
-      state.exercise.processLandmarks(results.leftHandLandmarks, ctx);
-    }
-    if (results.rightHandLandmarks) {
-      state.exercise.processLandmarks(results.rightHandLandmarks, ctx);
-    }
-    if (results.faceLandmarks) {
-      state.exercise.processLandmarks(results.faceLandmarks, ctx);
-    }
-  }
+  // if (state.exercise) {
+  //   if (results.poseLandmarks) {
+  //     state.exercise.processLandmarks(results.poseLandmarks, ctx);
+  //   }
+  //   if (results.leftHandLandmarks) {
+  //     state.exercise.processLandmarks(results.leftHandLandmarks, ctx);
+  //   }
+  //   if (results.rightHandLandmarks) {
+  //     state.exercise.processLandmarks(results.rightHandLandmarks, ctx);
+  //   }
+  //   if (results.faceLandmarks) {
+  //     state.exercise.processLandmarks(results.faceLandmarks, ctx);
+  //   }
+  // }
 };
 // export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
 //   const drawingUtils = new DrawingUtils(ctx);
