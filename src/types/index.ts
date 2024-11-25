@@ -3,6 +3,17 @@ import { NormalizedLandmark } from "@mediapipe/tasks-vision";
 declare global {
   interface Window {
     POSE_CONNECTIONS: PoseConnection[]; // Array of landmark connections
+    HAND_CONNECTIONS: PoseConnection[]; // Array of landmark connections
+    FACEMESH_CONTOURS: PoseConnection[]; // Array of landmark connections
+    FACEMESH_TESSELATION: PoseConnection[]; // Array of landmark connections
+    FACEMESH_LIPS: PoseConnection[]; // Array of landmark connections
+    FACEMESH_LEFT_EYE: PoseConnection[]; // Array of landmark connections
+    FACEMESH_LEFT_IRIS: PoseConnection[]; // Array of landmark connections
+    FACEMESH_LEFT_EYEBROW: PoseConnection[]; // Array of landmark connections
+    FACEMESH_RIGHT_EYE: PoseConnection[]; // Array of landmark connections
+    FACEMESH_RIGHT_EYEBROW: PoseConnection[]; // Array of landmark connections
+    FACEMESH_RIGHT_IRIS: PoseConnection[]; // Array of landmark connections
+    FACEMESH_FACE_OVAL: PoseConnection[]; // Array of landmark connections
   }
 }
 
