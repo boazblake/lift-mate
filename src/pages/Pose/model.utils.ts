@@ -1,7 +1,9 @@
 import m from "mithril";
 import Stream from "mithril-stream";
-import { Pose, Exercise } from "@/types";
+import { Pose, Exercise, HolisticData } from "@/types";
 import {
+  HandLandmarker,
+  FaceLandmarker,
   PoseLandmarker,
   DrawingUtils,
 } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
@@ -22,7 +24,7 @@ export const resetState = () => {
 
   // // Reset video element
   if (state.videoElement) {
-    console.log(state);
+    // console.log(state);
     CameraPreview.stop(); // Stop if already running
     // Stop any active media tracks if not already stopped
     if (state.videoElement.srcObject) {
@@ -59,12 +61,22 @@ export const state = {
   appState: Stream("Pre" as "Pre" | "Streaming"),
   videoElement: null as HTMLVideoElement | null,
   canvasElement: null as HTMLCanvasElement | null,
+  faceLandmarker: null as FaceLandmarker | null,
   poseLandmarker: null as PoseLandmarker | null,
+  handLandmarker: null as HandLandmarker | null,
   exercise: null as Exercise | null,
   isRendering: Stream(false) as Stream<boolean>,
   isLoading: Stream(false) as Stream<boolean>,
   cameraPosition: "rear",
   numberOfCameras: 0,
+  holisticData: {} as
+    | HolisticData
+    | {
+      poseLandmarks: [];
+      faceLandmarks: [];
+      leftHandLandmarks: [];
+      rightHandLandmarks: [];
+    },
 };
 
 // Add a pose to recorded frames
@@ -77,24 +89,131 @@ export const addPose = (pose: Pose) => {
 };
 
 // Draw landmarks on the canvas
-export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
+export const drawLandmarks = (
+  ctx: CanvasRenderingContext2D,
+  results: any,
+  options = {
+    pose: { color: "red", radius: 5, lineWidth: 2 },
+    hands: { color: "green", radius: 5, lineWidth: 2 },
+    face: { color: "yellow", radius: 1, lineWidth: 1 },
+  }
+) => {
   const drawingUtils = new DrawingUtils(ctx);
-  poses.forEach((pose) => {
-    drawingUtils.drawLandmarks(pose, { color: "red", radius: 5 });
+
+  // Draw Pose Landmarks
+  if (results.poseLandmarks) {
+    drawingUtils.drawLandmarks(results.poseLandmarks, {
+      color: options.pose.color,
+      radius: options.pose.radius,
+    });
     drawingUtils.drawConnectors(
-      pose,
+      results.poseLandmarks,
       convertConnections(window.POSE_CONNECTIONS),
       {
         color: "white",
-        lineWidth: 2,
+        lineWidth: options.pose.lineWidth,
       }
     );
+  }
 
-    if (state.exercise) {
-      state.exercise.processLandmarks(pose, ctx);
+  // Draw Left Hand Landmarks
+  if (results.leftHandLandmarks) {
+    drawingUtils.drawLandmarks(results.leftHandLandmarks, {
+      color: options.hands.color,
+      radius: options.hands.radius,
+    });
+    drawingUtils.drawConnectors(
+      results.leftHandLandmarks,
+      convertConnections(window.HAND_CONNECTIONS),
+      {
+        color: "blue",
+        lineWidth: options.hands.lineWidth,
+      }
+    );
+  }
+
+  // Draw Right Hand Landmarks
+  if (results.rightHandLandmarks) {
+    drawingUtils.drawLandmarks(results.rightHandLandmarks, {
+      color: options.hands.color,
+      radius: options.hands.radius,
+    });
+    drawingUtils.drawConnectors(
+      results.rightHandLandmarks,
+      convertConnections(window.HAND_CONNECTIONS),
+      {
+        color: "blue",
+        lineWidth: options.hands.lineWidth,
+      }
+    );
+  }
+
+  // Draw Face Landmarks
+  if (results.faceLandmarks) {
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_TESSELATION),
+      {
+        color: options.face.color,
+        lineWidth: options.face.lineWidth,
+      }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_LIPS),
+      { color: "pink", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_LEFT_EYE),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_RIGHT_EYE),
+      { color: "cyan", lineWidth: options.face.lineWidth }
+    );
+    drawingUtils.drawConnectors(
+      results.faceLandmarks,
+      convertConnections(window.FACEMESH_FACE_OVAL),
+      { color: "white", lineWidth: options.face.lineWidth }
+    );
+  }
+
+  // Call exercise-specific processing if available
+  if (state.exercise) {
+    if (results.poseLandmarks) {
+      state.exercise.processLandmarks(results.poseLandmarks, ctx);
     }
-  });
+    if (results.leftHandLandmarks) {
+      state.exercise.processLandmarks(results.leftHandLandmarks, ctx);
+    }
+    if (results.rightHandLandmarks) {
+      state.exercise.processLandmarks(results.rightHandLandmarks, ctx);
+    }
+    if (results.faceLandmarks) {
+      state.exercise.processLandmarks(results.faceLandmarks, ctx);
+    }
+  }
 };
+// export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
+//   const drawingUtils = new DrawingUtils(ctx);
+//   poses.forEach((pose) => {
+//     drawingUtils.drawLandmarks(pose, { color: "red", radius: 5 });
+//     drawingUtils.drawConnectors(
+//       pose,
+//       convertConnections(window.POSE_CONNECTIONS),
+//       {
+//         color: "white",
+//         lineWidth: 2,
+//       }
+//     );
+//
+//     if (state.exercise) {
+//       state.exercise.processLandmarks(pose, ctx);
+//     }
+//   });
+// };
 export const setExerciseHandler = (exercise: Exercise | null) => {
   state.exercise = exercise;
 };

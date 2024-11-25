@@ -1,6 +1,5 @@
 // Import external types
 import { NormalizedLandmark } from "@mediapipe/tasks-vision";
-
 declare global {
   interface Window {
     POSE_CONNECTIONS: PoseConnection[]; // Array of landmark connections
@@ -117,6 +116,13 @@ export type InjectedMetadata = Partial<FeedbackConfig> & {
   font?: string;
   fontSize?: string;
 };
+
+export interface HolisticData {
+  poseLandmarks: NormalizedLandmark[];
+  faceLandmarks: NormalizedLandmark[];
+  leftHandLandmarks: NormalizedLandmark[];
+  rightHandLandmarks: NormalizedLandmark[];
+}
 
 // // --- CORE TYPES ---
 //

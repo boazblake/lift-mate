@@ -2,18 +2,17 @@ import { Capacitor } from "@capacitor/core";
 import m from "mithril";
 import { state, saveRecording, resetState } from "./model.utils";
 import { initPoseLandmarker } from "./model.pose";
-import { startCameraForWeb, stopCameraForWeb } from "./model.web";
-
 // Set camera position and flip if on mobile
 export const setCameraHandler = async (position: string) => {
   state.cameraPosition = position;
-  if (Capacitor.getPlatform() !== "web") {
+  if (Capacitor.getPlatform() === "web") {
+    const webModule = await import("./model.web");
+    await webModule.stopCameraForWeb();
+
+    await webModule.startCameraForWeb();
+  } else {
     const { flipCameraForMobile } = await import("./model.native");
     await flipCameraForMobile();
-  } else {
-    await stopCameraForWeb();
-
-    await startCameraForWeb();
   }
 };
 
@@ -32,7 +31,6 @@ export const startDetection = async () => {
       state.isLoading(false);
       state.isRendering(true);
       state.appState("Streaming");
-      m.redraw(); // Ensure view is updated after state changes
       webModule.renderLoopForWeb();
     } else {
       const nativeModule = await import("./model.native");
@@ -41,11 +39,11 @@ export const startDetection = async () => {
       state.isLoading(false);
       state.isRendering(true);
       state.appState("Streaming");
-      m.redraw(); // Ensure view is updated after state changes
       const ctx = state.canvasElement?.getContext("2d");
       if (ctx) nativeModule.renderLoopForMobile(ctx);
     }
   }
+  m.redraw(); // Ensure view is updated after state changes
 };
 
 export const hasMultipleCameras = () =>
@@ -80,7 +78,8 @@ export const stopDetection = async () => {
 
   // Platform-specific camera stop
   if (Capacitor.getPlatform() === "web") {
-    await stopCameraForWeb();
+    const webModule = await import("./model.web");
+    await webModule.stopCameraForWeb();
   } else {
     const nativeModule = await import("./model.native");
     await nativeModule.stopCameraForMobile();
