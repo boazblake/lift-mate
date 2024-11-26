@@ -29,7 +29,6 @@ export const startDetection = async () => {
       await webModule.startCameraForWeb();
       await initPoseLandmarker();
       state.isLoading(false);
-      state.isRendering(true);
       state.appState("Streaming");
       webModule.renderLoopForWeb();
     } else {
@@ -37,7 +36,6 @@ export const startDetection = async () => {
       await nativeModule.startCameraForMobile();
       await initPoseLandmarker();
       state.isLoading(false);
-      state.isRendering(true);
       state.appState("Streaming");
       const ctx = state.canvasElement?.getContext("2d");
       if (ctx) nativeModule.renderLoopForMobile(ctx);

@@ -1,12 +1,5 @@
-import { state, addPose, drawLandmarks, resetState } from "./model.utils";
-import { HolisticData, Pose } from "@/types";
-import {
-  HandLandmarker,
-  FaceLandmarker,
-  PoseLandmarker,
-  DrawingUtils,
-} from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
-// Start the web camera
+import { state, resetState } from "./model.utils";
+
 export const startCameraForWeb = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -30,18 +23,13 @@ export const startCameraForWeb = async () => {
 export const renderLoopForWeb = async () => {
   console.log("renderLoopForWeb", state);
 
-  if (
-    !state.isRendering() ||
-    !state.poseLandmarker ||
-    !state.canvasElement ||
-    !state.videoElement
-  ) {
+  if (!state.poseLandmarker || !state.canvasElement || !state.videoElement) {
     resetState();
     return;
   }
 
   const ctx = state.canvasElement.getContext("2d");
-
+  console.log("wtf", ctx);
   const processFrame = async () => {
     if (ctx && state.canvasElement && state.videoElement) {
       ctx.clearRect(
@@ -53,7 +41,10 @@ export const renderLoopForWeb = async () => {
 
       // Flip and draw the video feed on the canvas
       ctx.save();
-      if (state.cameraPosition == "rear") {
+      if (
+        state.cameraPosition == "rear" ||
+        Ionic.platforms.includes("desktop")
+      ) {
         ctx.scale(-1, 1);
         ctx.translate(-state.canvasElement.width, 0);
       }

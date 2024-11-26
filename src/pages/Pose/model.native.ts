@@ -2,8 +2,7 @@ import {
   CameraPreview,
   CameraPreviewOptions,
 } from "@capacitor-community/camera-preview";
-import { state, addPose, drawLandmarks, resetState } from "./model.utils";
-import { Pose } from "@/types";
+import { state, resetState } from "./model.utils";
 
 // Start the mobile camera
 export const startCameraForMobile = async () => {
@@ -17,17 +16,51 @@ export const startCameraForMobile = async () => {
     enableHighResolution: true,
     rotateWhenOrientationChanged: true,
   };
+
   try {
-    await CameraPreview.stop(); // Stop if already running
+    await CameraPreview.start(cameraPreviewOptions).catch((error) => {
+      console.error("Error starting CameraPreview:", error);
+      throw new Error("Failed to start camera.");
+    });
+    console.log("Camera started successfully.");
   } catch (error) {
-    console.warn("CameraPreview was not running or failed to stop:", error);
+    console.error("Camera initialization failed:", error);
+    resetState();
   }
-  await CameraPreview.start(cameraPreviewOptions);
 };
 
 // Flip the mobile camera
 export const flipCameraForMobile = async () => {
-  await CameraPreview.flip();
+  try {
+    console.log("Flipping the camera...", state);
+
+    // Stop the render loop and Holistic processing
+    state.isRendering(false);
+    if (state.poseLandmarker) {
+      console.log;
+      await state.poseLandmarker.close(); // Close Holistic instance to release resources
+      console.log("Holistic processing paused.");
+    }
+
+    // Stop the current camera preview
+    await CameraPreview.stop();
+    console.log("Camera preview stopped.");
+
+    // Flip the camera
+    await CameraPreview.flip();
+    console.log("Camera flipped successfully.");
+
+    // Restart the camera preview
+    await startCameraForMobile();
+    console.log("Camera preview restarted.");
+
+    // Resume Holistic processing
+    state.isRendering(true);
+    await renderLoopForMobile(state.canvasElement?.getContext("2d") || null);
+    console.log("Render loop resumed.");
+  } catch (error) {
+    console.error("Error flipping the camera:", error);
+  }
 };
 
 // Render loop for mobile
