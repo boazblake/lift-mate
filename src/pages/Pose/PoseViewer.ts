@@ -5,7 +5,7 @@ import {
   setCameraHandler,
   hasMultipleCameras,
 } from "./model";
-import { setExerciseHandler, state } from "./model.utils";
+import { setExerciseHandler, state, toggleModel } from "./model.utils";
 import { Exercise } from "@/types";
 import * as exrxs from "@/exercises/index";
 console.log(exrxs);
@@ -77,7 +77,6 @@ const PoseViewer = () => {
             },
           }),
           state.appState() === "Streaming" &&
-          !Ionic.platforms.includes("desktop") &&
           m(
             "ion-fab",
             {
@@ -86,6 +85,47 @@ const PoseViewer = () => {
               style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
             },
             [
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel("poseLandmark");
+                  },
+                },
+                [
+                  m("ion-icon", {
+                    name: "accessibility-outline",
+                  }),
+                ]
+              ),
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel("handLandmark");
+                  },
+                },
+                [
+                  m("ion-icon", {
+                    name: "hand-left-outline",
+                  }),
+                ]
+              ),
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel("faceLandmark");
+                  },
+                },
+                [
+                  m("ion-icon", {
+                    name: "finger-print-outline",
+                  }),
+                ]
+              ),
+
+              !Ionic.platforms.includes("desktop") &&
               m(
                 "ion-fab-button",
                 {

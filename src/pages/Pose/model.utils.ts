@@ -12,6 +12,16 @@ import { Share } from "@capacitor/share";
 import { CameraPreview } from "@capacitor-community/camera-preview";
 import { Capacitor } from "@capacitor/core";
 
+export const toggleModel = (
+  modelName: "faceLandmark" | "handLandmark" | "poseLandmark"
+) => {
+  state.activeModels[modelName] = !state.activeModels[modelName];
+  console.log(
+    `${modelName} is now ${state.activeModels[modelName].enabled ? "enabled" : "disabled"
+    }`
+  );
+};
+
 export const resetState = () => {
   // Clear recorded frames and reset state variables
   state.recordedFrames([]);
@@ -67,8 +77,13 @@ export const state = {
   exercise: null as Exercise | null,
   isRendering: Stream(false) as Stream<boolean>,
   isLoading: Stream(false) as Stream<boolean>,
-  cameraPosition: "rear",
+  cameraPosition: "front",
   numberOfCameras: 0,
+  activeModels: {
+    faceLandmark: false,
+    handLandmark: false,
+    poseLandmark: false,
+  },
   holisticData: {} as
     | HolisticData
     | {
@@ -100,9 +115,8 @@ export const drawLandmarks = (
 ) => {
   const drawingUtils = new DrawingUtils(ctx);
   // Draw Pose Landmarks
-  // remove face
-  if (results.poseLandmarks) {
-    console.log(results.poseLandmarks);
+
+  if (results.poseLandmarks && state.activeModels.poseLandmark) {
     drawingUtils.drawLandmarks(results.poseLandmarks, {
       color: options.pose.color,
       radius: options.pose.radius,
@@ -117,40 +131,41 @@ export const drawLandmarks = (
     );
   }
 
-  // Draw Left Hand Landmarks
-  if (results.leftHandLandmarks) {
-    drawingUtils.drawLandmarks(results.leftHandLandmarks, {
-      color: options.hands.color,
-      radius: options.hands.radius,
-    });
-    drawingUtils.drawConnectors(
-      results.leftHandLandmarks,
-      convertConnections(window.HAND_CONNECTIONS),
-      {
-        color: "blue",
-        lineWidth: options.hands.lineWidth,
-      }
-    );
-  }
+  if (state.activeModels.handLandmark) {
+    // Draw Left Hand Landmarks
+    if (results.leftHandLandmarks) {
+      drawingUtils.drawLandmarks(results.leftHandLandmarks, {
+        color: options.hands.color,
+        radius: options.hands.radius,
+      });
+      drawingUtils.drawConnectors(
+        results.leftHandLandmarks,
+        convertConnections(window.HAND_CONNECTIONS),
+        {
+          color: "blue",
+          lineWidth: options.hands.lineWidth,
+        }
+      );
+    }
 
-  // Draw Right Hand Landmarks
-  if (results.rightHandLandmarks) {
-    drawingUtils.drawLandmarks(results.rightHandLandmarks, {
-      color: options.hands.color,
-      radius: options.hands.radius,
-    });
-    drawingUtils.drawConnectors(
-      results.rightHandLandmarks,
-      convertConnections(window.HAND_CONNECTIONS),
-      {
-        color: "blue",
-        lineWidth: options.hands.lineWidth,
-      }
-    );
+    // Draw Right Hand Landmarks
+    if (results.rightHandLandmarks) {
+      drawingUtils.drawLandmarks(results.rightHandLandmarks, {
+        color: options.hands.color,
+        radius: options.hands.radius,
+      });
+      drawingUtils.drawConnectors(
+        results.rightHandLandmarks,
+        convertConnections(window.HAND_CONNECTIONS),
+        {
+          color: "blue",
+          lineWidth: options.hands.lineWidth,
+        }
+      );
+    }
   }
-
   // Draw Face Landmarks
-  if (results.faceLandmarks) {
+  if (results.faceLandmarks && state.activeModels.faceLandmark) {
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_TESSELATION),
