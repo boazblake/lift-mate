@@ -1,7 +1,7 @@
 import { HolisticData } from "@/types";
-import { state, drawLandmarks } from "./model.utils";
-
-export const initPoseLandmarker = async () => {
+import { state, drawLandmarks, addPose } from "./model.utils";
+import m from "mithril";
+export const initMediaPose = async () => {
   console.log("Initializing MediaPipe Holistic...");
 
   try {
@@ -29,17 +29,30 @@ export const initPoseLandmarker = async () => {
     });
 
     holistic.onResults((results: HolisticData) => {
-      if (!state.canvasElement) return;
+      console.log("holistic results");
 
+      if (!state.canvasElement) {
+        console.warn("missing canvasElement");
+        return;
+      }
+
+      state.isLoading(false);
+      state.appState("Streaming");
       state.isRendering(true);
 
+      m.redraw();
       const ctx = state.canvasElement.getContext("2d");
       if (ctx) {
-        drawLandmarks(ctx, results); // Updated to handle Holistic results
+        drawLandmarks(state.activeModels, ctx, results); // Updated to handle Holistic results
       }
+      if (state.isRecording()) {
+        console.log("isrecoring", results);
+        addPose(results);
+      }
+      m.redraw();
     });
 
-    state.poseLandmarker = holistic;
+    state.holistic = holistic;
     console.log("Holistic Landmarker initialized successfully.");
   } catch (error) {
     console.error("Error initializing MediaPipe Holistic:", error);
