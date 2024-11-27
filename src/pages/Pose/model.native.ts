@@ -18,14 +18,23 @@ export const startCameraForMobile = async () => {
   };
 
   try {
+    console.log("Starting camera for mobile...");
+
+    // Stop any existing camera preview
+    await CameraPreview.stop().catch((error) => {
+      console.warn("No active camera to stop or error stopping camera:", error);
+    });
+
+    // Start the new camera preview
     await CameraPreview.start(cameraPreviewOptions).catch((error) => {
       console.error("Error starting CameraPreview:", error);
       throw new Error("Failed to start camera.");
     });
+
     console.log("Camera started successfully.");
   } catch (error) {
     console.error("Camera initialization failed:", error);
-    resetState();
+    resetState(); // Reset the state on error
   }
 };
 
@@ -36,9 +45,9 @@ export const flipCameraForMobile = async () => {
 
     // Stop the render loop and Holistic processing
     state.isRendering(false);
-    if (state.poseLandmarker) {
+    if (state.holistic) {
       console.log;
-      await state.poseLandmarker.close(); // Close Holistic instance to release resources
+      await state.holistic.close(); // Close Holistic instance to release resources
       console.log("Holistic processing paused.");
     }
 
@@ -74,9 +83,10 @@ export const renderLoopForMobile = async (
   }
 
   const processFrame = async () => {
-    if (!state.isRendering() || !state.poseLandmarker) {
+    state.isRendering(true);
+    if (!state.holistic) {
       console.log(
-        "Stopping mobile render loop - rendering stopped or poseLandmarker not available."
+        "Stopping mobile render loop - rendering stopped or holistic not available."
       );
       resetState();
       return;
@@ -128,15 +138,15 @@ export const renderLoopForMobile = async (
           state.canvasElement.height
         );
         ctx.restore();
-      }
 
-      // Run Holistic detection on the captured image
-      try {
-        await state.poseLandmarker.send({ image });
-      } catch (detectionError) {
-        console.error("Error during holistic detection:", detectionError);
-        resetState();
-        return;
+        // Run Holistic detection on the captured image
+        try {
+          await state.holistic.send({ image });
+        } catch (detectionError) {
+          console.error("Error during holistic detection:", detectionError);
+          resetState();
+          return;
+        }
       }
 
       requestAnimationFrame(processFrame); // Continue loop if no errors

@@ -1,6 +1,6 @@
 import m from "mithril";
 import Stream from "mithril-stream";
-import { Pose, Exercise, HolisticData } from "@/types";
+import { Exercise, HolisticData, StateTransitions } from "@/types";
 import {
   HandLandmarker,
   FaceLandmarker,
@@ -13,16 +13,17 @@ import { CameraPreview } from "@capacitor-community/camera-preview";
 import { Capacitor } from "@capacitor/core";
 
 export const toggleModel = (
+  activeModels: Record<string, boolean>,
   modelName: "faceLandmark" | "handLandmark" | "poseLandmark"
 ) => {
-  state.activeModels[modelName] = !state.activeModels[modelName];
+  activeModels[modelName] = !activeModels[modelName];
   console.log(
-    `${modelName} is now ${state.activeModels[modelName].enabled ? "enabled" : "disabled"
-    }`
+    `${modelName} is now ${activeModels[modelName] ? "enabled" : "disabled"}`
   );
 };
 
 export const resetState = () => {
+  console.warn("resetting state");
   // Clear recorded frames and reset state variables
   state.recordedFrames([]);
   state.appState("Pre");
@@ -62,7 +63,7 @@ export const resetState = () => {
   }
 
   // Reset poseLandmarker
-  state.poseLandmarker = null;
+  state.holistic = null;
   m.redraw();
 };
 // Shared state
@@ -71,6 +72,7 @@ export const state = {
   appState: Stream("Pre" as "Pre" | "Streaming"),
   videoElement: null as HTMLVideoElement | null,
   canvasElement: null as HTMLCanvasElement | null,
+  holistic: null as typeof window.Holistic.prototype | null,
   faceLandmarker: null as FaceLandmarker | null,
   poseLandmarker: null as PoseLandmarker | null,
   handLandmarker: null as HandLandmarker | null,
@@ -79,32 +81,61 @@ export const state = {
   isLoading: Stream(false) as Stream<boolean>,
   cameraPosition: "front",
   numberOfCameras: 0,
+  isRecording: Stream(false),
   activeModels: {
-    faceLandmark: false,
-    handLandmark: false,
-    poseLandmark: false,
+    faceLandmark: true,
+    handLandmark: true,
+    poseLandmark: true,
   },
   holisticData: {} as
     | HolisticData
     | {
-      poseLandmarks: [];
-      faceLandmarks: [];
-      leftHandLandmarks: [];
-      rightHandLandmarks: [];
+        poseLandmarks: [];
+        faceLandmarks: [];
+        leftHandLandmarks: [];
+        rightHandLandmarks: [];
+      },
+  fsm: {
+    state: "Idle" as keyof StateTransitions,
+    transitions: {
+      Idle: { start: "Loading" },
+      Loading: { ready: "Ready", error: "Idle" },
+      Ready: { beginStreaming: "Streaming", switchCamera: "SwitchingCamera" },
+      Streaming: { switchCamera: "SwitchingCamera", stop: "Stopped" },
+      SwitchingCamera: { completeSwitch: "Streaming" },
+      Stopped: { restart: "Idle" },
+    } as StateTransitions,
+    transition<T extends keyof StateTransitions>(
+      event: keyof StateTransitions[T]
+    ) {
+      const currentState = this.state as T;
+      const nextState = this.transitions[currentState]?.[event];
+      if (nextState) {
+        console.log(`Transition: ${this.state} -> ${nextState}`);
+        this.state = nextState as keyof StateTransitions;
+        return true;
+      } else {
+        console.error(
+          `Invalid transition from ${this.state} on ${JSON.stringify(event)}`
+        );
+        return false;
+      }
     },
+  },
 };
 
 // Add a pose to recorded frames
-export const addPose = (pose: Pose) => {
+export const addPose = (poses: HolisticData) => {
   const currentTime = performance.now() / 1000;
   state.recordedFrames([
     ...state.recordedFrames(),
-    { timestamp: currentTime, poses: [pose] },
+    { timestamp: currentTime, poses: poses },
   ]);
 };
 
 // Draw landmarks on the canvas
 export const drawLandmarks = (
+  activeModels: Record<string, boolean>,
   ctx: CanvasRenderingContext2D,
   results: any,
   options = {
@@ -116,7 +147,7 @@ export const drawLandmarks = (
   const drawingUtils = new DrawingUtils(ctx);
   // Draw Pose Landmarks
 
-  if (results.poseLandmarks && state.activeModels.poseLandmark) {
+  if (results.poseLandmarks && activeModels.poseLandmark) {
     drawingUtils.drawLandmarks(results.poseLandmarks, {
       color: options.pose.color,
       radius: options.pose.radius,
@@ -131,7 +162,7 @@ export const drawLandmarks = (
     );
   }
 
-  if (state.activeModels.handLandmark) {
+  if (activeModels.handLandmark) {
     // Draw Left Hand Landmarks
     if (results.leftHandLandmarks) {
       drawingUtils.drawLandmarks(results.leftHandLandmarks, {
@@ -165,7 +196,7 @@ export const drawLandmarks = (
     }
   }
   // Draw Face Landmarks
-  if (results.faceLandmarks && state.activeModels.faceLandmark) {
+  if (results.faceLandmarks && activeModels.faceLandmark) {
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_TESSELATION),
@@ -266,12 +297,9 @@ export const convertConnections = (connections: [number, number][]) =>
   connections.map(([start, end]) => ({ start, end }));
 
 export const saveRecording = async () => {
+  console.log(state.recordedFrames());
   try {
-    const data = JSON.stringify(
-      [state.recordedFrames(), state.exercise?.meta || {}],
-      null,
-      2
-    );
+    const data = JSON.stringify(state.recordedFrames, null, 2);
     const fileName = `pose_recording_${new Date().toISOString()}.json`;
 
     // Write to filesystem
