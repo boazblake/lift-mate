@@ -6,6 +6,7 @@ import { drawLandmarks } from "@/pages/Pose/model.utils";
 // Playback State Streams
 export const playbackPoses = Stream<Array<PoseFrame>>([]); // Loaded poses for playback
 export const isPlaying = Stream<boolean>(false); // Playback active flag
+export let isModalVisible = Stream<boolean>(false); // Playback active flag
 export const currentFrame = Stream<number>(0); // Current frame index
 export const playbackSpeed = Stream<number>(1); // Playback speed (1x default)
 export const loopPlayback = Stream<boolean>(false); // Loop playback flag
@@ -120,7 +121,7 @@ const playNextFrame = (timestamp: number = 0) => {
   if (
     targetFrameIndex !== currentFrame() ||
     Math.abs(playbackPoses()[currentFrame()].timestamp - elapsedPlaybackTime) <
-    epsilon
+      epsilon
   ) {
     console.log("Updating currentFrame...");
     currentFrame(currentFrame() + 1); // Update currentFrame
@@ -199,4 +200,9 @@ export const setPlaybackSpeed = (speed: number) => {
     const adjustedElapsedTime = elapsedTime() / speed;
     playbackStartTime = currentTime - adjustedElapsedTime * 1000;
   }
+};
+
+export const toggleModal = () => {
+  isModalVisible(!isModalVisible());
+  console.log(isModalVisible());
 };
