@@ -1,11 +1,5 @@
 import m, { VnodeDOM } from "mithril";
-import {
-  startDetection,
-  stopDetection,
-  setCameraHandler,
-  hasMultipleCameras,
-  stopRecording,
-} from "./model";
+import { startDetection, setCameraHandler, stopRecording } from "./model";
 import { setExerciseHandler, state, toggleModel } from "./model.utils";
 import { Exercise } from "@/types";
 import * as exrxs from "@/exercises/index";
