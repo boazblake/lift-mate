@@ -16,7 +16,7 @@ export const initMediaPose = async () => {
       locateFile: (file: string) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`,
     });
-
+    console.log("Holistic...");
     holistic.setOptions({
       selfieMode: state.cameraPosition === "front",
       modelComplexity: 1,
@@ -28,6 +28,7 @@ export const initMediaPose = async () => {
       minTrackingConfidence: 0.5,
     });
 
+    state.isRendering(true);
     holistic.onResults((results: HolisticData) => {
       console.log("holistic results");
 
@@ -38,7 +39,6 @@ export const initMediaPose = async () => {
 
       state.isLoading(false);
       state.appState("Streaming");
-      state.isRendering(true);
 
       m.redraw();
       const ctx = state.canvasElement.getContext("2d");

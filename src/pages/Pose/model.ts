@@ -28,7 +28,6 @@ export const handleStateTransition = async <
   try {
     // Execute the main action
     await action();
-
     // Invoke the success callback if provided
     if (onSuccess) {
       onSuccess();
@@ -43,46 +42,49 @@ export const handleStateTransition = async <
   }
 };
 
-const kickStart = async () => {
-  try {
-    if (Capacitor.getPlatform() === "web") {
-      await calculateNumberOfCameras();
-      const { startCameraForWeb } = await import("./model.web");
-      await startCameraForWeb();
-    } else {
-      const { startCameraForMobile } = await import("./model.native");
-      await startCameraForMobile();
-    }
+export const fsmTransition = <T extends keyof StateTransitions>(
+  currentState: T,
+  event: keyof StateTransitions[T],
+  transitions: StateTransitions
+): keyof StateTransitions | null => {
+  // Ensure transitions for the current state exist
+  const currentTransitions = transitions[currentState];
+  if (!currentTransitions) {
+    console.error(`No transitions defined for state: ${String(currentState)}`);
+    return null;
+  }
 
-    await initMediaPose(); // Initialize MediaPipe Holistic
-
-    if (Capacitor.getPlatform() === "web") {
-      console.log("Starting web render loop.");
-      const { renderLoopForWeb } = await import("./model.web");
-      await renderLoopForWeb();
-    } else {
-      const { renderLoopForMobile } = await import("./model.native");
-      const ctx = state.canvasElement?.getContext("2d");
-      if (ctx) await renderLoopForMobile(ctx);
-    }
-
-    state.appState("Streaming");
-    state.isRendering(true);
-  } catch (error) {
-    console.error("Error during startDetection:", error);
-    resetState();
-  } finally {
-    state.isLoading(false);
-    m.redraw();
+  // Ensure the event exists in the current state's transitions
+  const nextState = currentTransitions[event];
+  if (nextState) {
+    console.log(`Transition: ${String(currentState)} -> ${String(nextState)}`);
+    return nextState as keyof StateTransitions; // Explicitly cast to the correct type
+  } else {
+    console.error(
+      `Invalid transition from state: ${String(
+        currentState
+      )} with event: ${String(event)}`
+    );
+    return null;
   }
 };
 
 export const setCameraHandler = async (position: "front" | "rear") => {
-  if (state.cameraPosition === position) return;
+  if (state.cameraPosition === position) return; // No need to switch
+
   await handleStateTransition<"Streaming">(
     async () => {
+      // Pause rendering
       state.isRendering(false);
       state.cameraPosition = position;
+
+      // Close the current Holistic instance
+      if (state.holistic) {
+        await state.holistic.close();
+        state.holistic = null;
+      }
+
+      // Stop the current camera and start the new one
       if (Capacitor.getPlatform() === "web") {
         const { startCameraForWeb } = await import("./model.web");
         await startCameraForWeb();
@@ -90,16 +92,12 @@ export const setCameraHandler = async (position: "front" | "rear") => {
         const { startCameraForMobile } = await import("./model.native");
         await startCameraForMobile();
       }
+
+      // Reinitialize Holistic
       await initMediaPose();
-      state.isRendering(true); // Start rendering
-      // if (Capacitor.getPlatform() === "web") {
-      //   const { renderLoopForWeb } = await import("./model.web");
-      //   renderLoopForWeb();
-      // } else {
-      //   const ctx = state.canvasElement?.getContext("2d");
-      //   const { renderLoopForMobile } = await import("./model.native");
-      //   if (ctx) renderLoopForMobile(ctx);
-      // }
+
+      // Resume rendering
+      state.isRendering(true);
     },
     {
       onStart: "switchCamera", // FSM transition
@@ -119,26 +117,24 @@ export const startDetection = async () => {
 
   await handleStateTransition<"Idle">(
     async () => {
-      state.isLoading(true);
-      if (Capacitor.getPlatform() === "web") {
-        await calculateNumberOfCameras();
-        const { startCameraForWeb } = await import("./model.web");
-        await startCameraForWeb();
-      } else {
-        const { startCameraForMobile } = await import("./model.native");
-        await startCameraForMobile();
-      }
+      state.isLoading(true); // Show loading spinner
+
+      // Unified camera initialization using ternary operator
+      await (Capacitor.getPlatform() === "web"
+        ? (await import("./model.web")).startCameraForWeb()
+        : (await import("./model.native")).startCameraForMobile());
+
+      // Holistic Initialization
       await initMediaPose();
 
-      state.isRendering(true); // Start rendering
-      if (Capacitor.getPlatform() === "web") {
-        const { renderLoopForWeb } = await import("./model.web");
-        renderLoopForWeb();
-      } else {
-        const ctx = state.canvasElement?.getContext("2d");
-        const { renderLoopForMobile } = await import("./model.native");
-        if (ctx) renderLoopForMobile(ctx);
-      }
+      // Unified rendering loop using ternary operator
+      const renderLoop =
+        Capacitor.getPlatform() === "web"
+          ? (await import("./model.web")).renderLoopForWeb
+          : (await import("./model.native")).renderLoopForMobile;
+
+      const ctx = state.canvasElement?.getContext("2d");
+      if (ctx) renderLoop(ctx);
     },
     {
       onStart: "start", // FSM transition
@@ -147,12 +143,13 @@ export const startDetection = async () => {
       },
       onError: () => {
         state.fsm.transition("error"); // Transition to "Idle" on failure
+        resetState(); // Reset app state
       },
     }
   );
 
-  state.isLoading(false); // Clear loading
-  m.redraw();
+  state.isLoading(false); // Clear loading spinner
+  m.redraw(); // Trigger UI update
 };
 
 export const hasMultipleCameras = () =>

@@ -72,93 +72,69 @@ export const flipCameraForMobile = async () => {
   }
 };
 
-// Render loop for mobile
 export const renderLoopForMobile = async (
   ctx: CanvasRenderingContext2D | null
 ) => {
   if (!ctx) {
     console.error("Canvas context not available in render loop.");
-    resetState();
     return;
   }
 
   const processFrame = async () => {
-    state.isRendering(true);
-    if (!state.holistic) {
-      console.log(
-        "Stopping mobile render loop - rendering stopped or holistic not available."
-      );
-      resetState();
+    if (!state.isRendering()) {
+      console.log("Rendering paused. Skipping frame.");
+      requestAnimationFrame(processFrame); // Continue loop to wait for resume
+      return;
+    }
+
+    if (!state.holistic || !state.canvasElement) {
+      console.warn("Holistic instance not ready. Skipping frame.");
+      requestAnimationFrame(processFrame); // Continue loop
       return;
     }
 
     try {
       // Capture frame from CameraPreview
-      let frame;
-      try {
-        frame = await CameraPreview.captureSample({ quality: 85 });
-      } catch (captureError) {
-        console.error(
-          "Error capturing frame from CameraPreview:",
-          captureError
-        );
-        resetState();
-        return;
-      }
+      const frame = await CameraPreview.captureSample({ quality: 100 });
+      const image = await base64ToImage(frame.value);
 
-      // Convert base64 to HTMLImageElement
-      let image;
-      try {
-        image = await base64ToImage(frame.value);
-      } catch (imageError) {
-        console.error("Error converting base64 to image:", imageError);
-        resetState();
-        return;
-      }
+      // Clear and draw video feed onto the canvas
+      ctx.clearRect(
+        0,
+        0,
+        state.canvasElement.width,
+        state.canvasElement.height
+      );
 
-      // Flip and draw the captured image onto the canvas
-      if (ctx && state.canvasElement && image) {
-        ctx.clearRect(
-          0,
-          0,
-          state.canvasElement.width,
-          state.canvasElement.height
-        );
-
-        ctx.save();
-        // if (state.cameraPosition == "front") {
-        ctx.scale(-1, 1); // Flip horizontally
+      ctx.save();
+      if (state.cameraPosition === "front") {
+        ctx.scale(-1, 1);
         ctx.translate(-state.canvasElement.width, 0);
-        // }
-        ctx.drawImage(
-          image,
-          0,
-          0,
-          state.canvasElement.width,
-          state.canvasElement.height
-        );
-        ctx.restore();
-
-        // Run Holistic detection on the captured image
-        try {
-          await state.holistic.send({ image });
-        } catch (detectionError) {
-          console.error("Error during holistic detection:", detectionError);
-          resetState();
-          return;
-        }
       }
+      ctx.drawImage(
+        image,
+        0,
+        0,
+        state.canvasElement.width,
+        state.canvasElement.height
+      );
+      ctx.restore();
 
-      requestAnimationFrame(processFrame); // Continue loop if no errors
-    } catch (generalError) {
-      console.error("Unexpected error in mobile render loop:", generalError);
-      resetState();
+      // Send the captured frame to Holistic for processing
+      try {
+        await state.holistic.send({ image });
+      } catch (processingError) {
+        console.error("Error during Holistic processing:", processingError);
+      }
+    } catch (error) {
+      console.error("Error rendering frame:", error);
     }
+
+    requestAnimationFrame(processFrame); // Continue the rendering loop
   };
 
-  requestAnimationFrame(processFrame);
+  requestAnimationFrame(processFrame); // Start the rendering loop
 };
-
 // Convert base64 to HTMLImageElement
 const base64ToImage = (base64: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
