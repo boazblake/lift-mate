@@ -63,7 +63,12 @@ export const resetState = () => {
   }
 
   // Reset poseLandmarker
-  state.holistic = null;
+  if (state.holistic) {
+    state.holistic.close().catch((error) => {
+      console.warn("Error closing Holistic during reset:", error);
+    });
+    state.holistic = null;
+  }
   m.redraw();
 };
 // Shared state
@@ -90,11 +95,11 @@ export const state = {
   holisticData: {} as
     | HolisticData
     | {
-        poseLandmarks: [];
-        faceLandmarks: [];
-        leftHandLandmarks: [];
-        rightHandLandmarks: [];
-      },
+      poseLandmarks: [];
+      faceLandmarks: [];
+      leftHandLandmarks: [];
+      rightHandLandmarks: [];
+    },
   fsm: {
     state: "Idle" as keyof StateTransitions,
     transitions: {
@@ -129,7 +134,7 @@ export const addPose = (poses: HolisticData) => {
   const currentTime = performance.now() / 1000;
   state.recordedFrames([
     ...state.recordedFrames(),
-    { timestamp: currentTime, poses: poses },
+    { timestamp: currentTime, poses: JSON.stringify(poses) },
   ]);
 };
 
