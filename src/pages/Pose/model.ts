@@ -83,11 +83,11 @@ export const setCameraHandler = async (position: "front" | "rear") => {
         await state.holistic.close();
         state.holistic = null;
       }
-
       // Stop the current camera and start the new one
       if (Capacitor.getPlatform() === "web") {
         const { startCameraForWeb } = await import("./model.web");
-        await startCameraForWeb();
+        console.log("platform?", Capacitor.isNativePlatform());
+        // await startCameraForWeb();
       } else {
         const { startCameraForMobile } = await import("./model.native");
         await startCameraForMobile();

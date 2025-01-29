@@ -1,7 +1,4 @@
-import {
-  CameraPreview,
-  CameraPreviewOptions,
-} from "@capacitor-community/camera-preview";
+import { CameraPreview, CameraPreviewOptions } from "@capgo/camera-preview";
 import { state, resetState } from "./model.utils";
 
 // Start the mobile camera
@@ -41,12 +38,11 @@ export const startCameraForMobile = async () => {
 // Flip the mobile camera
 export const flipCameraForMobile = async () => {
   try {
-    console.log("Flipping the camera...", state);
+    console.log("Flipping the camera...");
 
     // Stop the render loop and Holistic processing
     state.isRendering(false);
     if (state.holistic) {
-      console.log;
       await state.holistic.close(); // Close Holistic instance to release resources
       console.log("Holistic processing paused.");
     }
@@ -107,10 +103,10 @@ export const renderLoopForMobile = async (
       );
 
       ctx.save();
-      if (state.cameraPosition === "front") {
-        ctx.scale(-1, 1);
-        ctx.translate(-state.canvasElement.width, 0);
-      }
+      // if (state.cameraPosition === "front") {
+      //   ctx.scale(-1, 1);
+      //   ctx.translate(-state.canvasElement.width, 0);
+      // }
       ctx.drawImage(
         image,
         0,

@@ -1,5 +1,10 @@
 import m, { VnodeDOM } from "mithril";
-import { startDetection, setCameraHandler, stopRecording } from "./model";
+import {
+  startDetection,
+  setCameraHandler,
+  stopRecording,
+  stopDetection,
+} from "./model";
 import { setExerciseHandler, state, toggleModel } from "./model.utils";
 import { Exercise } from "@/types";
 import * as exrxs from "@/exercises/index";
@@ -9,6 +14,9 @@ console.log(exercises);
 
 const PoseViewer = () => {
   return {
+    onbeforeremove: async () => {
+      if (state.videoElement) await stopDetection();
+    },
     view: () => {
       return m(
         "section.pose-viewer",
@@ -72,135 +80,140 @@ const PoseViewer = () => {
             },
           }),
           state.appState() === "Streaming" &&
-            m(
-              "ion-fab",
-              {
-                vertical: "top",
-                horizontal: "start",
-                style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
-              },
-              [
-                m(
-                  "ion-fab-button",
-                  {
-                    onclick: () => {
-                      toggleModel(state.activeModels, "poseLandmark");
-                    },
+          m(
+            "ion-fab",
+            {
+              vertical: "top",
+              horizontal: "start",
+              style: { marginTop: "calc(var(--ion-safe-area-top) + 100px)" },
+            },
+            [
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel(state.activeModels, "poseLandmark");
                   },
-                  [
-                    m("ion-icon", {
-                      name: "accessibility-outline",
-                    }),
-                  ]
-                ),
-                m(
-                  "ion-fab-button",
-                  {
-                    onclick: () => {
-                      toggleModel(state.activeModels, "handLandmark");
-                    },
+                },
+                [
+                  m("ion-icon", {
+                    name: "accessibility-outline",
+                  }),
+                ]
+              ),
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel(state.activeModels, "handLandmark");
                   },
-                  [
-                    m("ion-icon", {
-                      name: "hand-left-outline",
-                    }),
-                  ]
-                ),
-                m(
-                  "ion-fab-button",
-                  {
-                    onclick: () => {
-                      toggleModel(state.activeModels, "faceLandmark");
-                    },
+                },
+                [
+                  m("ion-icon", {
+                    name: "hand-left-outline",
+                  }),
+                ]
+              ),
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    toggleModel(state.activeModels, "faceLandmark");
                   },
-                  [
-                    m("ion-icon", {
-                      name: "finger-print-outline",
-                    }),
-                  ]
-                ),
+                },
+                [
+                  m("ion-icon", {
+                    name: "finger-print-outline",
+                  }),
+                ]
+              ),
 
-                !Ionic.platforms.includes("desktop") &&
-                  m(
-                    "ion-fab-button",
-                    {
-                      onclick: () => {
-                        const currentCamera =
-                          state.cameraPosition === "front" ? "rear" : "front";
-                        setCameraHandler(currentCamera);
-                      },
-                    },
-                    [
-                      m("ion-icon", {
-                        name:
-                          state.cameraPosition === "front"
-                            ? "camera-reverse"
-                            : "camera",
-                      }),
-                    ]
-                  ),
-              ]
-            ),
+              !Ionic.platforms.includes("desktop") &&
+              m(
+                "ion-fab-button",
+                {
+                  onclick: () => {
+                    const currentCamera =
+                      state.cameraPosition === "front" ? "rear" : "front";
+                    setCameraHandler(currentCamera);
+                  },
+                },
+                [
+                  m("ion-icon", {
+                    name:
+                      state.cameraPosition === "front"
+                        ? "camera-reverse"
+                        : "camera",
+                  }),
+                ]
+              ),
+            ]
+          ),
 
           // Centered FAB: displays "start", spinner, or nothing based on state
           state.appState() === "Pre" &&
-            m(
-              "ion-fab",
-              { vertical: "center", horizontal: "center", slot: "fixed" },
-              [
-                m(
-                  "ion-fab-button",
-                  {
-                    style: { width: "200px", height: "200px" },
-                    onclick: async () => {
-                      if (state.videoElement && state.canvasElement) {
-                        // state.isLoading(true);
-                        await startDetection(); // Initiates detection
-                      }
-                    },
+          m(
+            "ion-fab",
+            { vertical: "center", horizontal: "center", slot: "fixed" },
+            [
+              m(
+                "ion-fab-button",
+                {
+                  style: { width: "200px", height: "200px" },
+                  onclick: async () => {
+                    if (state.videoElement && state.canvasElement) {
+                      // state.isLoading(true);
+                      await startDetection(); // Initiates detection
+                    }
                   },
-                  state.isLoading() ? m("ion-spinner") : "start"
-                ),
-              ]
-            ),
+                },
+                state.isLoading() ? m("ion-spinner") : "start"
+              ),
+            ]
+          ),
 
           // Stop Button, visible only in Streaming state
           state.appState() === "Streaming" &&
-            m(
-              "ion-fab",
-              { vertical: "bottom", horizontal: "end", slot: "fixed" },
-              [
-                //  m(
-                //   "ion-fab-button",
-                //   {
-                //     download: true,
-                //     style: {
-                //       marginBottom:
-                //         "calc(var(--ion-safe-area-bottom) + 100px)",
-                //     },
-                //     onclick: async () => {
-                //       if (state.videoElement) await stopDetection();
-                //     },
-                //   },
-                //   "Stop"
-                // )
-                m(
-                  "ion-fab-button",
-                  {
-                    style: {
-                      marginBottom: "calc(var(--ion-safe-area-bottom) + 100px)",
-                    },
-                    onclick: async () => {
-                      state.isRecording(!state.isRecording());
-                      if (!state.isRecording()) {
-                        await stopRecording();
-                      }
-                    },
+          m(
+            "ion-fab",
+            { vertical: "bottom", horizontal: "end", slot: "fixed" },
+            [
+              //  m(
+              //   "ion-fab-button",
+              //   {
+              //     download: true,
+              //     style: {
+              //       marginBottom:
+              //         "calc(var(--ion-safe-area-bottom) + 100px)",
+              //     },
+              //     onclick: async () => {
+              //       if (state.videoElement) await stopDetection();
+              //     },
+              //   },
+              //   "Stop"
+              // )
+              m(
+                "ion-fab-button",
+                {
+                  color: state.isRecording() ? "danger" : "primary",
+                  style: {
+                    marginBottom: "calc(var(--ion-safe-area-bottom) + 100px)",
                   },
-                  state.isRecording() ? "stop" : "start"
-                ),
-              ]
-            ),
+                  onclick: async () => {
+                    state.isRecording(!state.isRecording());
+                    if (!state.isRecording()) {
+                      await stopRecording();
+                    }
+                  },
+                },
+                m("ion-icon", {
+                  name: state.isRecording()
+                    ? "stop-circle-outline"
+                    : "play-circle-outline",
+                })
+              ),
+            ]
+          ),
         ]
       );
     },
