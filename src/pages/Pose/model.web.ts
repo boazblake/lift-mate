@@ -8,7 +8,6 @@ export const startCameraForWeb = async () => {
 
     const facingMode =
       state.cameraPosition === "front" ? "user" : "environment";
-
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode,

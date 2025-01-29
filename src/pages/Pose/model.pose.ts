@@ -1,6 +1,7 @@
 import { HolisticData } from "@/types";
 import { state, drawLandmarks, addPose } from "./model.utils";
 import m from "mithril";
+import { Capacitor } from "@capacitor/core";
 export const initMediaPose = async () => {
   console.log("Initializing MediaPipe Holistic...");
 
@@ -11,14 +12,16 @@ export const initMediaPose = async () => {
         "MediaPipe Holistic is not loaded. Check your script tags."
       );
     }
-
+    const isAligned =
+      state.cameraPosition === "front" && Capacitor.getPlatform() === "web";
     const holistic = new Holistic({
       locateFile: (file: string) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`,
     });
-    console.log("Holistic...");
+    // console.log("Holistic...", state.cameraPosition, Capacitor.getPlatform());
     holistic.setOptions({
-      selfieMode: state.cameraPosition === "front",
+      flipHorizontal: isAligned,
+      selfieMode: isAligned,
       modelComplexity: 1,
       smoothLandmarks: true,
       enableSegmentation: true,
@@ -46,7 +49,7 @@ export const initMediaPose = async () => {
         drawLandmarks(state.activeModels, ctx, results); // Updated to handle Holistic results
       }
       if (state.isRecording()) {
-        console.log("isrecoring", results);
+        console.log("isrecording");
         addPose(results);
       }
       m.redraw();
