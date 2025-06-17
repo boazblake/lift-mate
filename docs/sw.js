@@ -1,1 +1,135 @@
-if(!self.define){let e,s={};const l=(l,i)=>(l=new URL(l+".js",i).href,s[l]||new Promise((s=>{if("document"in self){const e=document.createElement("script");e.src=l,e.onload=s,document.head.appendChild(e)}else e=l,importScripts(l),s()})).then((()=>{let e=s[l];if(!e)throw new Error(`Module ${l} didn’t register its module`);return e})));self.define=(i,n)=>{const r=e||("document"in self?document.currentScript.src:"")||location.href;if(s[r])return;let t={};const u=e=>l(e,r),o={module:{uri:r},exports:t,require:u};s[r]=Promise.all(i.map((e=>o[e]||u(e)))).then((e=>(n(...e),t)))}}define(["./workbox-3e911b1d"],(function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"assets/index-Bn6eQfct.js",revision:null},{url:"assets/index-CscTm0Y1.css",revision:null},{url:"assets/index-legacy-CRkpEmnw.js",revision:null},{url:"assets/model.native-DE7LmbJ9.js",revision:null},{url:"assets/model.native-legacy-CbOCZ0LJ.js",revision:null},{url:"assets/model.web-CuNCavnY.js",revision:null},{url:"assets/model.web-legacy-zaoOPUyX.js",revision:null},{url:"assets/polyfills-legacy-Ik4G5a0g.js",revision:null},{url:"assets/web-C2hT2UG1.js",revision:null},{url:"assets/web-DNokp3vD.js",revision:null},{url:"assets/web-Du7Fpu1j.js",revision:null},{url:"assets/web-legacy-AUT-bYFu.js",revision:null},{url:"assets/web-legacy-BtZW0fDP.js",revision:null},{url:"assets/web-legacy-CKli0HUp.js",revision:null},{url:"index.html",revision:"609ddfe95e2c903d7ee9f28bd4529f54"},{url:"registerSW.js",revision:"e7a3185972f33088024dcb880f1cd298"},{url:"manifest.webmanifest",revision:"53d007dd2c2ac38509cf271e9ed5a64c"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("index.html")))}));
+/**
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// If the loader is already loaded, just stop.
+if (!self.define) {
+  let registry = {};
+
+  // Used for `eval` and `importScripts` where we can't get script URL by other means.
+  // In both cases, it's safe to use a global var because those functions are synchronous.
+  let nextDefineUri;
+
+  const singleRequire = (uri, parentUri) => {
+    uri = new URL(uri + ".js", parentUri).href;
+    return registry[uri] || (
+      
+        new Promise(resolve => {
+          if ("document" in self) {
+            const script = document.createElement("script");
+            script.src = uri;
+            script.onload = resolve;
+            document.head.appendChild(script);
+          } else {
+            nextDefineUri = uri;
+            importScripts(uri);
+            resolve();
+          }
+        })
+      
+      .then(() => {
+        let promise = registry[uri];
+        if (!promise) {
+          throw new Error(`Module ${uri} didn’t register its module`);
+        }
+        return promise;
+      })
+    );
+  };
+
+  self.define = (depsNames, factory) => {
+    const uri = nextDefineUri || ("document" in self ? document.currentScript.src : "") || location.href;
+    if (registry[uri]) {
+      // Module is already loading or loaded.
+      return;
+    }
+    let exports = {};
+    const require = depUri => singleRequire(depUri, uri);
+    const specialDeps = {
+      module: { uri },
+      exports,
+      require
+    };
+    registry[uri] = Promise.all(depsNames.map(
+      depName => specialDeps[depName] || require(depName)
+    )).then(deps => {
+      factory(...deps);
+      return exports;
+    });
+  };
+}
+define(['./workbox-54d0af47'], (function (workbox) { 'use strict';
+
+  self.skipWaiting();
+  workbox.clientsClaim();
+
+  /**
+   * The precacheAndRoute() method efficiently caches and responds to
+   * requests for URLs in the manifest.
+   * See https://goo.gl/S9QRab
+   */
+  workbox.precacheAndRoute([{
+    "url": "assets/index-BT1Ihkx5.js",
+    "revision": null
+  }, {
+    "url": "assets/index-BzFA5BWQ.css",
+    "revision": null
+  }, {
+    "url": "assets/index-legacy-BCADYj0q.js",
+    "revision": null
+  }, {
+    "url": "assets/model.native-CdkaVJfd.js",
+    "revision": null
+  }, {
+    "url": "assets/model.native-legacy-Crh0pdU_.js",
+    "revision": null
+  }, {
+    "url": "assets/model.web-CYmQI3oB.js",
+    "revision": null
+  }, {
+    "url": "assets/model.web-legacy-D4sDHdbh.js",
+    "revision": null
+  }, {
+    "url": "assets/polyfills-legacy-gnkn42Z0.js",
+    "revision": null
+  }, {
+    "url": "assets/web-BAOyFAga.js",
+    "revision": null
+  }, {
+    "url": "assets/web-Lc7adPG9.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-BdQr0n3f.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-BIikcJbg.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-Byz0O2Wg.js",
+    "revision": null
+  }, {
+    "url": "assets/web-PSfsjWvO.js",
+    "revision": null
+  }, {
+    "url": "index.html",
+    "revision": "232b3b5ee27866748b4fa6fdabe39b1c"
+  }, {
+    "url": "registerSW.js",
+    "revision": "1872c500de691dce40960bb85481de07"
+  }, {
+    "url": "manifest.webmanifest",
+    "revision": "5cead04f3c936077949bc6957a8eac59"
+  }], {});
+  workbox.cleanupOutdatedCaches();
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
+
+}));

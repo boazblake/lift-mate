@@ -9,7 +9,7 @@ import {
 } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { CameraPreview } from "@capgo/camera-preview";
+import { CameraPreview } from "@capacitor-community/camera-preview";
 import { Capacitor } from "@capacitor/core";
 
 export const toggleModel = (
