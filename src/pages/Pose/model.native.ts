@@ -1,4 +1,4 @@
-import { CameraPreview, CameraPreviewOptions } from "@capgo/camera-preview";
+import { CameraPreview, CameraPreviewOptions } from "@capacitor-community/camera-preview";
 import { state, resetState } from "./model.utils";
 
 // Start the mobile camera
