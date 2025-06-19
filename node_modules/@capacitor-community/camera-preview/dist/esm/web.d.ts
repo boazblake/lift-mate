@@ -6,7 +6,6 @@ export declare class CameraPreviewWeb extends WebPlugin implements CameraPreview
      *  used in capture
      */
     private isBackCamera;
-    constructor();
     start(options: CameraPreviewOptions): Promise<void>;
     startRecordVideo(): Promise<void>;
     stopRecordVideo(): Promise<void>;

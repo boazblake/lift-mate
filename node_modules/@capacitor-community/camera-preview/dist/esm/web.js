@@ -1,11 +1,5 @@
 import { WebPlugin } from '@capacitor/core';
 export class CameraPreviewWeb extends WebPlugin {
-    constructor() {
-        super({
-            name: 'CameraPreview',
-            platforms: ['web'],
-        });
-    }
     async start(options) {
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {

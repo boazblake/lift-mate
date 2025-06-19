@@ -7,12 +7,6 @@ const CameraPreview = core.registerPlugin('CameraPreview', {
 });
 
 class CameraPreviewWeb extends core.WebPlugin {
-    constructor() {
-        super({
-            name: 'CameraPreview',
-            platforms: ['web'],
-        });
-    }
     async start(options) {
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
