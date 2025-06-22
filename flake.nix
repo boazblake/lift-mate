@@ -67,12 +67,12 @@
 
             if [ ! -f ".cert/cert.pem" ]; then
               echo "Generating local SSL certs..."
-              npm run make:certs
+              node --runmake:certs
             fi
 
             echo "Dev shell ready. Common commands:"
-            echo "  npm run goios      # Run iOS dev build"
-            echo "  npm run startios   # Build and run iOS"
+            echo "  node --run startweb      # Run web dev build"
+            echo "  node --run startios   # Build and run iOS"
           '';
         };
       }

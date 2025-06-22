@@ -5,15 +5,21 @@ const isDev = process.env.NODE_ENV === "development";
 const config: CapacitorConfig = {
   appId: "io.boazblake.liftmate",
   appName: "Lift Mate",
-  webDir: "docs", // Ensure this matches the directory where your built web assets are stored
+  webDir: "docs",
   server: isDev
     ? {
-        url: "http://localhost:8101", // Only use this during development
-        cleartext: true, // Allow HTTP in development mode
+        url: "http://localhost:8101",
+        cleartext: true,
       }
-    : {}, // Remove server URL in production
+    : {},
   ios: {
-    webContentsDebuggingEnabled: true, // Enable web debugging for iOS
+    minVersion: 18,
+    webContentsDebuggingEnabled: true,
+    NSCameraUsageDescription:
+      "This app uses the camera for real-time pose estimation to track your workouts.",
+    NSMicrophoneUsageDescription:
+      "This app may use the microphone for video recording during workouts.",
+    WKWebViewOnly: true,
   },
 };
 
