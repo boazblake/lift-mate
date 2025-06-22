@@ -8,7 +8,7 @@ import fs from "fs";
 export default defineConfig(({ mode }) => {
   const isMobile = mode === "mobile";
   const isSSL = mode === "ssl";
-  console.log("mode?", mode);
+  console.log("wtf", process.env.NODE_ENV, isSSL, isMobile);
   return {
     base: isMobile ? "/" : "/lift-mate/",
     plugins: [
