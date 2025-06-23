@@ -2,20 +2,47 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import mkcert from "vite-plugin-mkcert";
 import legacy from "@vitejs/plugin-legacy";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import path from "path";
 import fs from "fs";
 
 export default defineConfig(({ mode }) => {
   const isMobile = mode === "mobile";
   const isSSL = mode === "ssl";
-  console.log("wtf", process.env.NODE_ENV, isSSL, isMobile);
+  console.log("Vite mode:", mode, "isSSL:", isSSL, "isMobile:", isMobile);
+
   return {
     base: isMobile ? "/" : "/lift-mate/",
     plugins: [
+      nodePolyfills({
+        include: ["process"], // Polyfill process.env
+        globals: {
+          process: true,
+        },
+      }),
       VitePWA({
         registerType: "autoUpdate",
         devOptions: {
           enabled: true,
+        },
+        mode: "generateSW",
+        strategies: "generateSW",
+        workbox: {
+          globDirectory: "docs", // Match build.outDir
+          globPatterns: ["**/*.{js,wasm,css,html,png,jpg,jpeg,svg,ico}"],
+          globIgnores: ["**/node_modules/**/*", "sw.js", "workbox-*.js"],
+          runtimeCaching: [
+            {
+              urlPattern: ({ request }) => request.destination === "document",
+              handler: "NetworkFirst",
+            },
+            {
+              urlPattern: ({ request }) =>
+                request.destination === "script" ||
+                request.destination === "style",
+              handler: "StaleWhileRevalidate",
+            },
+          ],
         },
         manifest: {
           name: "Lift Mate",
@@ -45,36 +72,46 @@ export default defineConfig(({ mode }) => {
         "@pages": path.resolve(__dirname, "./src/pages"),
         "@utils": path.resolve(__dirname, "./src/utils"),
         "@types": path.resolve(__dirname, "./src/types"),
+        "zustand/react": path.resolve(
+          __dirname,
+          "./node_modules/zustand/vanilla"
+        ), // Prevent React bindings
       },
     },
     build: {
-      outDir: "docs/",
-      assetsDir: "assets/",
+      outDir: "docs",
+      assetsDir: "assets",
       minify: "terser",
+      rollupOptions: {
+        external: ["react", "react-dom"], // Exclude React
+      },
     },
     server:
       !isMobile || isSSL
         ? {
-            port: 8101, // Specify the port here
-            strictPort: true, // Ensures that Vite fails if the port is unavailable
+            port: 8101,
+            strictPort: true,
             https: {
               key: fs.readFileSync("./.cert/key.pem"),
               cert: fs.readFileSync("./.cert/cert.pem"),
             },
           }
         : {
-            port: 8101, // Specify the port here
-            strictPort: true, // Ensures that Vite fails if the port is unavailable
+            host: "localhost",
+            port: 8101,
+            strictPort: true,
           },
     optimizeDeps: {
       exclude: [
-        "@ionic/core", // You can also add other Ionic components here if needed
+        "@ionic/core",
         "ion-menu",
         "ion-tab-bar",
         "ion-tab",
         "ion-item",
         "ion-button",
         "ion-app",
+        "react",
+        "react-dom",
       ],
     },
   };

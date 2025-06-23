@@ -10,7 +10,7 @@ const model = {
     loadingProgress: { max: 0, value: 0 },
     isLoggedIn: () => sessionStorage.getItem("token"),
   },
-  settings: { width: "", profile: "", inspector: "" },
+  settings: { width: "", displayType: "", inspector: "" },
 };
 
 export default model;

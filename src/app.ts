@@ -1,8 +1,10 @@
 import m from "mithril";
 import routes from "./routes";
 import model from "./model";
+import type { Model, Settings, DisplayType } from "./types";
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
+import "setimmediate";
 
 // Initialize PWA elements
 import { defineCustomElements } from "@ionic/core/loader";
@@ -38,25 +40,11 @@ import "@ionic/core/css/display.css";
 // import "./theme/variables.css";
 
 defineCustomElements();
-// Types
-type Profile = "phone" | "tablet" | "desktop";
-
-interface Settings {
-  width: number;
-  profile: Profile;
-}
-
-// Model interface
-interface Model {
-  settings: Settings;
-  // Add other model properties here
-}
 
 const root = document.body;
 let winW = window.innerWidth;
 
-// Set display profiles
-const getProfile = (w: number): Profile => {
+const getDisplayType = (w: number): DisplayType => {
   if (w < 600) return "phone";
   if (w < 920) return "tablet";
   return "desktop";
@@ -66,15 +54,15 @@ const checkWidth = (winW: number): number => {
   const w = window.innerWidth;
   if (winW !== w) {
     winW = w;
-    const lastProfile = (model as Model).settings.profile;
+    const lastDisplayType = (model as Model).settings.displayType;
     (model as Model).settings.width = w;
-    (model as Model).settings.profile = getProfile(w);
-    if (lastProfile !== (model as Model).settings.profile) m.redraw();
+    (model as Model).settings.displayType = getDisplayType(w);
+    if (lastDisplayType !== (model as Model).settings.displayType) m.redraw();
   }
   return requestAnimationFrame(() => checkWidth(winW));
 };
 
-(model as Model).settings.profile = getProfile(winW);
+(model as Model).settings.displayType = getDisplayType(winW);
 
 checkWidth(winW);
 
