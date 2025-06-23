@@ -1,13 +1,19 @@
-import { state, resetState } from "./model.utils";
+import { useStore } from "@pages/Pose/model.utils";
+import { createLogger, transports, format } from "winston";
+
+const logger = createLogger({
+  level: "info",
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new transports.Console()],
+});
 
 export const startCameraForWeb = async () => {
+  const { cameraPosition, videoElement, set } = useStore.getState();
   try {
-    console.log(
-      `Starting camera for web. Current position: ${state.cameraPosition}`
-    );
+    logger.info(`Starting camera for web. Current position: ${cameraPosition}`);
+    set({ isLoading: true });
 
-    const facingMode =
-      state.cameraPosition === "front" ? "user" : "environment";
+    const facingMode = cameraPosition === "front" ? "user" : "environment";
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode,
@@ -17,136 +23,99 @@ export const startCameraForWeb = async () => {
       },
     });
 
-    if (state.videoElement) {
-      // Stop any existing video stream
-      if (state.videoElement.srcObject) {
-        const oldStream = state.videoElement.srcObject as MediaStream;
-        oldStream.getTracks().forEach((track) => track.stop());
+    if (videoElement) {
+      if (videoElement.srcObject) {
+        (videoElement.srcObject as MediaStream)
+          .getTracks()
+          .forEach((track) => track.stop());
       }
-
-      // Assign the new stream and wait for metadata to load
-      state.videoElement.srcObject = stream;
+      videoElement.srcObject = stream;
       await new Promise((resolve) =>
-        state.videoElement?.addEventListener("loadedmetadata", resolve, {
-          once: true,
-        })
+        videoElement.addEventListener("loadedmetadata", resolve, { once: true })
       );
-      await state.videoElement.play();
+      await videoElement.play();
 
-      // Validate video dimensions
-      if (
-        state.videoElement.videoWidth === 0 ||
-        state.videoElement.videoHeight === 0
-      ) {
-        throw new Error(
-          "Invalid video dimensions. Camera initialization failed."
-        );
+      if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+        throw new Error("Invalid video dimensions.");
       }
     }
 
-    console.log("Camera started successfully for web.");
+    logger.info("Camera started successfully for web.");
   } catch (error) {
-    console.error("Error accessing the camera on web:", error);
-    resetState();
+    logger.error("Error accessing the camera on web:", error);
+    set({ appState: "Pre", isLoading: false });
+  } finally {
+    set({ isLoading: false });
   }
 };
 
-// Render loop for web
 export const renderLoopForWeb = async () => {
-  if (
-    // !state.isRendering() ||
-    !state.holistic ||
-    !state.videoElement ||
-    !state.canvasElement
-  ) {
-    console.warn(
+  const { videoElement, canvasElement, holistic, isRendering, cameraPosition } =
+    useStore.getState();
+  if (!videoElement || !canvasElement || !holistic || !isRendering) {
+    logger.warn(
       "Rendering loop skipped. Missing elements or rendering disabled."
     );
     return;
   }
 
-  const ctx = state.canvasElement.getContext("2d");
+  const ctx = canvasElement.getContext("2d");
   if (!ctx) {
-    console.error("Failed to get canvas context.");
+    logger.error("Failed to get canvas context.");
     return;
   }
 
-  const processFrame = async () => {
-    console.log("processing frame");
+  const targetFPS = 30;
+  const frameInterval = 1000 / targetFPS;
+  let lastFrameTime = performance.now();
 
-    if (
-      state.canvasElement &&
-      state.videoElement &&
-      state.videoElement.videoWidth > 0 &&
-      state.videoElement.videoHeight > 0
-    ) {
-      // Clear and validate canvas
-      ctx.clearRect(
-        0,
-        0,
-        state.canvasElement.width,
-        state.canvasElement.height
-      );
-      if (state.canvasElement.width === 0 || state.canvasElement.height === 0) {
-        console.error("Invalid canvas dimensions.");
-        return;
-      }
-
-      // Draw video feed
-      if (
-        state.videoElement &&
-        state.videoElement.videoWidth > 0 &&
-        state.videoElement.videoHeight > 0
-      ) {
-        ctx.save();
-        if (state.cameraPosition === "front") {
-          ctx.scale(-1, 1);
-          ctx.translate(-state.canvasElement.width, 0);
-        }
-        ctx.drawImage(
-          state.videoElement,
-          0,
-          0,
-          state.canvasElement.width,
-          state.canvasElement.height
-        );
-        ctx.restore();
-
-        if (
-          state.isRendering() &&
-          state.videoElement &&
-          state.videoElement.videoWidth > 0 &&
-          state.videoElement.videoHeight > 0
-        ) {
-          // Process Holistic detection
-          try {
-            await state.holistic.send({ image: state.videoElement });
-            console.log("Holistic processed frame successfully.");
-          } catch (error) {
-            console.error("Error during holistic processing:", error);
-          }
-        }
-      } else {
-        console.error(
-          "Invalid video element dimensions.",
-          state.videoElement,
-          state.videoElement.width,
-          state.videoElement.height
-        );
-      }
+  const processFrame = async (currentTime: number) => {
+    if (currentTime - lastFrameTime < frameInterval || !isRendering) {
+      requestAnimationFrame(processFrame);
+      return;
     }
+
+    lastFrameTime = currentTime;
+
+    if (videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+      ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      ctx.save();
+      if (cameraPosition === "front") {
+        ctx.scale(-1, 1);
+        ctx.translate(-canvasElement.width, 0);
+      }
+      ctx.drawImage(
+        videoElement,
+        0,
+        0,
+        canvasElement.width,
+        canvasElement.height
+      );
+      ctx.restore();
+
+      try {
+        await holistic.send({ image: videoElement });
+        logger.debug("Holistic processed frame successfully.");
+      } catch (error) {
+        logger.error("Error during holistic processing:", error);
+      }
+    } else {
+      logger.error("Invalid video element dimensions.");
+    }
+
     requestAnimationFrame(processFrame);
   };
 
-  processFrame();
+  requestAnimationFrame(processFrame);
 };
 
-// Stop the web camera
 export const stopCameraForWeb = async () => {
-  if (state.videoElement?.srcObject) {
-    (state.videoElement.srcObject as MediaStream)
+  const { videoElement } = useStore.getState();
+  if (videoElement?.srcObject) {
+    (videoElement.srcObject as MediaStream)
       .getTracks()
       .forEach((track) => track.stop());
-    state.videoElement.srcObject = null;
+    videoElement.srcObject = null;
+    logger.info("Web camera stopped.");
   }
 };

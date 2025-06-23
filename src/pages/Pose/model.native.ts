@@ -1,12 +1,54 @@
-import { CameraPreview, CameraPreviewOptions } from "@capacitor-community/camera-preview";
-import { state, resetState } from "./model.utils";
+import {
+  CameraPreview,
+  CameraPreviewOptions,
+} from "@capacitor-community/camera-preview";
+import { useStore } from "@pages/Pose/model.utils";
+import { Camera } from "@capacitor/camera";
+import { Capacitor } from "@capacitor/core";
+import adapter from "webrtc-adapter"; // Ensure WebRTC compatibility
 
-// Start the mobile camera
+const logger = {
+  info: (msg: string) =>
+    console.log(
+      JSON.stringify({
+        level: "info",
+        message: msg,
+        timestamp: new Date().toISOString(),
+      })
+    ),
+  warn: (msg: string) =>
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        message: msg,
+        timestamp: new Date().toISOString(),
+      })
+    ),
+  error: (msg: string) =>
+    console.error(
+      JSON.stringify({
+        level: "error",
+        message: msg,
+        timestamp: new Date().toISOString(),
+      })
+    ),
+  debug: (msg: string) =>
+    console.debug(
+      JSON.stringify({
+        level: "debug",
+        message: msg,
+        timestamp: new Date().toISOString(),
+      })
+    ),
+};
+
 export const startCameraForMobile = async () => {
+  const { canvasElement, cameraPosition, videoElement, set } =
+    useStore.getState();
   const cameraPreviewOptions: CameraPreviewOptions = {
-    position: state.cameraPosition,
-    width: state.canvasElement?.width || 1280,
-    height: state.canvasElement?.height || 720,
+    position: cameraPosition,
+    width: canvasElement?.width || 1280,
+    height: canvasElement?.height || 720,
     parent: "video-feed",
     toBack: true,
     disableAudio: true,
@@ -15,56 +57,125 @@ export const startCameraForMobile = async () => {
   };
 
   try {
-    console.log("Starting camera for mobile...");
+    logger.info("Starting camera for mobile...");
+    set({ isLoading: true });
 
-    // Stop any existing camera preview
+    const permissionStatus = await Camera.checkPermissions();
+    logger.info(
+      "Camera permission status: " + JSON.stringify(permissionStatus)
+    );
+    if (permissionStatus.camera !== "granted") {
+      const result = await Camera.requestPermissions({
+        permissions: ["camera"],
+      });
+      if (result.camera !== "granted") {
+        throw new Error("Camera permission denied.");
+      }
+    }
+
+    if (videoElement) {
+      try {
+        await startWebRTCFallback();
+        logger.info("WebRTC started successfully, using videoElement.");
+        return;
+      } catch (error) {
+        logger.warn(
+          "WebRTC fallback failed, trying CameraPreview: " +
+            (error as Error).message
+        );
+      }
+    }
+
     await CameraPreview.stop().catch((error) => {
-      console.warn("No active camera to stop or error stopping camera:", error);
+      logger.warn("No active camera to stop: " + (error as Error).message);
     });
-
-    // Start the new camera preview
-    await CameraPreview.start(cameraPreviewOptions).catch((error) => {
-      console.error("Error starting CameraPreview:", error);
-      throw new Error("Failed to start camera.");
-    });
-
-    console.log("Camera started successfully.");
+    await CameraPreview.start(cameraPreviewOptions);
+    logger.info("CameraPreview started successfully.");
+    set({ appState: "Streaming" });
   } catch (error) {
-    console.error("Camera initialization failed:", error);
-    resetState(); // Reset the state on error
+    logger.error("Camera initialization failed: " + (error as Error).message);
+    set({ appState: "Pre", isLoading: false });
+    throw new Error("Failed to start camera.");
+  } finally {
+    set({ isLoading: false });
   }
 };
 
-// Flip the mobile camera
-export const flipCameraForMobile = async () => {
-  try {
-    console.log("Flipping the camera...");
+const startWebRTCFallback = async () => {
+  const { cameraPosition, videoElement, set } = useStore.getState();
+  if (!videoElement) {
+    throw new Error("No video element available for WebRTC fallback.");
+  }
 
-    // Stop the render loop and Holistic processing
-    state.isRendering(false);
-    if (state.holistic) {
-      await state.holistic.close(); // Close Holistic instance to release resources
-      console.log("Holistic processing paused.");
+  logger.info(
+    "WebRTC environment: " +
+      JSON.stringify({
+        protocol: window.location.protocol,
+        hostname: window.location.hostname,
+        navigator: !!navigator,
+        mediaDevices: !!navigator?.mediaDevices,
+        getUserMedia: !!navigator?.mediaDevices?.getUserMedia,
+        adapter: adapter?.browserDetails || "No adapter",
+      })
+  );
+
+  if (
+    window.location.protocol !== "https:" &&
+    window.location.hostname !== "localhost"
+  ) {
+    throw new Error("HTTPS or localhost required for WebRTC.");
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error("WebRTC not supported in this environment.");
+  }
+
+  const facingMode = cameraPosition === "front" ? "user" : "environment";
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode,
+      width: 1280,
+      height: 720,
+      frameRate: { ideal: 30, max: 30 },
+    },
+  });
+
+  if (videoElement.srcObject) {
+    (videoElement.srcObject as MediaStream)
+      .getTracks()
+      .forEach((track) => track.stop());
+  }
+  videoElement.srcObject = stream;
+  await videoElement.play();
+  logger.info("WebRTC fallback successful.");
+  set({ appState: "Streaming" });
+};
+
+export const flipCameraForMobile = async () => {
+  const { set, holistic, canvasElement } = useStore.getState();
+  try {
+    logger.info("Flipping the camera...");
+    set({ isRendering: false });
+
+    if (holistic) {
+      await holistic.close();
+      logger.info("Holistic processing paused.");
     }
 
-    // Stop the current camera preview
     await CameraPreview.stop();
-    console.log("Camera preview stopped.");
-
-    // Flip the camera
+    logger.info("Camera preview stopped.");
     await CameraPreview.flip();
-    console.log("Camera flipped successfully.");
+    logger.info("Camera flipped successfully.");
 
-    // Restart the camera preview
     await startCameraForMobile();
-    console.log("Camera preview restarted.");
+    logger.info("Camera preview restarted.");
 
-    // Resume Holistic processing
-    state.isRendering(true);
-    await renderLoopForMobile(state.canvasElement?.getContext("2d") || null);
-    console.log("Render loop resumed.");
+    set({ isRendering: true });
+    await renderLoopForMobile(canvasElement?.getContext("2d") || null);
+    logger.info("Render loop resumed.");
   } catch (error) {
-    console.error("Error flipping the camera:", error);
+    logger.error("Error flipping the camera: " + (error as Error).message);
+    set({ isRendering: false });
   }
 };
 
@@ -72,75 +183,78 @@ export const renderLoopForMobile = async (
   ctx: CanvasRenderingContext2D | null
 ) => {
   if (!ctx) {
-    console.error("Canvas context not available in render loop.");
+    logger.error("Canvas context not available in render loop.");
     return;
   }
 
-  const processFrame = async () => {
-    if (!state.isRendering()) {
-      console.log("Rendering paused. Skipping frame.");
-      requestAnimationFrame(processFrame); // Continue loop to wait for resume
+  const { holistic, canvasElement, isRendering, cameraPosition, videoElement } =
+    useStore.getState();
+  if (!canvasElement || !isRendering) {
+    logger.warn(
+      "Rendering loop skipped. Missing elements or rendering disabled."
+    );
+    return;
+  }
+
+  if (!videoElement || !videoElement.srcObject || !holistic) {
+    logger.warn(
+      "No videoElement or holistic available. Displaying CameraPreview feed only."
+    );
+    // return;
+  }
+
+  const targetFPS = 30;
+  const frameInterval = 1000 / targetFPS;
+  let lastFrameTime = performance.now();
+
+  const processFrame = async (currentTime: number) => {
+    if (currentTime - lastFrameTime < frameInterval || !isRendering) {
+      requestAnimationFrame(processFrame);
       return;
     }
 
-    if (!state.holistic || !state.canvasElement) {
-      console.warn("Holistic instance not ready. Skipping frame.");
-      requestAnimationFrame(processFrame); // Continue loop
-      return;
-    }
+    lastFrameTime = currentTime;
 
     try {
-      // Capture frame from CameraPreview
-      const frame = await CameraPreview.captureSample({ quality: 100 });
-      const image = await base64ToImage(frame.value);
-
-      // Clear and draw video feed onto the canvas
-      ctx.clearRect(
-        0,
-        0,
-        state.canvasElement.width,
-        state.canvasElement.height
-      );
-
+      ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       ctx.save();
-      // if (state.cameraPosition === "front") {
-      //   ctx.scale(-1, 1);
-      //   ctx.translate(-state.canvasElement.width, 0);
-      // }
+      if (cameraPosition === "front") {
+        ctx.scale(-1, 1);
+        ctx.translate(-canvasElement.width, 0);
+      }
       ctx.drawImage(
-        image,
+        videoElement,
         0,
         0,
-        state.canvasElement.width,
-        state.canvasElement.height
+        canvasElement.width,
+        canvasElement.height
       );
       ctx.restore();
 
-      // Send the captured frame to Holistic for processing
-      try {
-        await state.holistic.send({ image });
-      } catch (processingError) {
-        console.error("Error during Holistic processing:", processingError);
-      }
+      await holistic.send({ image: videoElement });
+      logger.debug("Holistic processed frame successfully.");
     } catch (error) {
-      console.error("Error rendering frame:", error);
+      logger.error("Error rendering frame: " + (error as Error).message);
     }
 
-    requestAnimationFrame(processFrame); // Continue the rendering loop
+    requestAnimationFrame(processFrame);
   };
 
-  requestAnimationFrame(processFrame); // Start the rendering loop
+  requestAnimationFrame(processFrame);
 };
-// Convert base64 to HTMLImageElement
-const base64ToImage = (base64: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = "data:image/jpeg;base64," + base64;
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
-  });
 
-// Stop the mobile camera
 export const stopCameraForMobile = async () => {
-  await CameraPreview.stop();
+  try {
+    await CameraPreview.stop();
+    logger.info("Mobile camera stopped.");
+    const { videoElement } = useStore.getState();
+    if (videoElement?.srcObject) {
+      (videoElement.srcObject as MediaStream)
+        .getTracks()
+        .forEach((track) => track.stop());
+      videoElement.srcObject = null;
+    }
+  } catch (error) {
+    logger.error("Error stopping mobile camera: " + (error as Error).message);
+  }
 };

@@ -1,6 +1,7 @@
 import m from "mithril";
-import Stream from "mithril-stream";
-import { Exercise, HolisticData, StateTransitions } from "@/types";
+import { createStore } from "zustand";
+import * as R from "ramda";
+import { Exercise, HolisticData, StateTransitions } from "@types";
 import {
   HandLandmarker,
   FaceLandmarker,
@@ -10,98 +11,88 @@ import {
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { CameraPreview } from "@capacitor-community/camera-preview";
-import { Capacitor } from "@capacitor/core";
+import { createLogger, transports, format } from "winston";
+import sanitizeFilename from "sanitize-filename";
 
-export const toggleModel = (
-  activeModels: Record<string, boolean>,
-  modelName: "faceLandmark" | "handLandmark" | "poseLandmark"
-) => {
-  activeModels[modelName] = !activeModels[modelName];
-  console.log(
-    `${modelName} is now ${activeModels[modelName] ? "enabled" : "disabled"}`
-  );
-};
+const logger = createLogger({
+  level: "info",
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new transports.Console()],
+});
 
-export const resetState = () => {
-  console.warn("resetting state");
-  // Clear recorded frames and reset state variables
-  state.recordedFrames([]);
-  state.appState("Pre");
-  state.exercise = null;
-  state.cameraPosition = "front";
-  state.numberOfCameras = 0;
-  state.isRendering(false);
-  state.isLoading(false);
+const debounce = R.curry((wait: number, fn: (...args: any[]) => void) => {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: any[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      fn(...args);
+      timeout = null;
+    }, wait);
+  };
+});
 
-  // // Reset video element
-  if (state.videoElement) {
-    // console.log(state);
-    CameraPreview.stop(); // Stop if already running
-    // Stop any active media tracks if not already stopped
-    if (state.videoElement.srcObject) {
-      (state.videoElement.srcObject as MediaStream)
-        .getTracks()
-        .forEach((track) => track.stop());
-      state.videoElement.srcObject = null; // Clear the video source
-    }
-    state.videoElement = null; // Nullify the reference
-  }
+export const debouncedRedraw = debounce(16, m.redraw);
 
-  // Reset canvas element
-  if (state.canvasElement) {
-    const ctx = state.canvasElement.getContext("2d");
-    if (ctx) {
-      // Clear the canvas content
-      ctx.clearRect(
-        0,
-        0,
-        state.canvasElement.width,
-        state.canvasElement.height
-      );
-    }
-    state.canvasElement = null; // Nullify the reference
-  }
-
-  // Reset poseLandmarker
-  if (state.holistic) {
-    state.holistic.close().catch((error) => {
-      console.warn("Error closing Holistic during reset:", error);
-    });
-    state.holistic = null;
-  }
-  m.redraw();
-};
-// Shared state
-export const state = {
-  recordedFrames: Stream([]) as Stream<Array<any> | []>,
-  appState: Stream("Pre" as "Pre" | "Streaming"),
-  videoElement: null as HTMLVideoElement | null,
-  canvasElement: null as HTMLCanvasElement | null,
-  holistic: null as typeof window.Holistic.prototype | null,
-  faceLandmarker: null as FaceLandmarker | null,
-  poseLandmarker: null as PoseLandmarker | null,
-  handLandmarker: null as HandLandmarker | null,
-  exercise: null as Exercise | null,
-  isRendering: Stream(false) as Stream<boolean>,
-  isLoading: Stream(false) as Stream<boolean>,
-  cameraPosition: "front",
-  numberOfCameras: 0,
-  isRecording: Stream(false),
-  activeModels: {
-    faceLandmark: true,
-    handLandmark: true,
-    poseLandmark: true,
-  },
-  holisticData: {} as
+interface AppState {
+  recordedFrames: Array<{ timestamp: number; poses: string }>;
+  appState: "Pre" | "Streaming";
+  videoElement: HTMLVideoElement | null; // Used for WebRTC; may be populated on mobile with fallback
+  canvasElement: HTMLCanvasElement | null;
+  holistic: any | null;
+  faceLandmarker: FaceLandmarker | null;
+  poseLandmarker: PoseLandmarker | null;
+  handLandmarker: HandLandmarker | null;
+  exercise: Exercise | null;
+  isRendering: boolean;
+  isLoading: boolean;
+  cameraPosition: "front" | "rear";
+  numberOfCameras: number;
+  isRecording: boolean;
+  activeModels: Record<
+    "faceLandmark" | "handLandmark" | "poseLandmark",
+    boolean
+  >;
+  holisticData:
     | HolisticData
     | {
-      poseLandmarks: [];
-      faceLandmarks: [];
-      leftHandLandmarks: [];
-      rightHandLandmarks: [];
-    },
+        poseLandmarks: [];
+        faceLandmarks: [];
+        leftHandLandmarks: [];
+        rightHandLandmarks: [];
+      };
   fsm: {
-    state: "Idle" as keyof StateTransitions,
+    state: keyof StateTransitions;
+    transitions: StateTransitions;
+    transition: <T extends keyof StateTransitions>(
+      event: keyof StateTransitions[T]
+    ) => boolean;
+  };
+}
+
+export const useStore = createStore<AppState>((set) => ({
+  recordedFrames: [],
+  appState: "Pre",
+  videoElement: null,
+  canvasElement: null,
+  holistic: null,
+  faceLandmarker: null,
+  poseLandmarker: null,
+  handLandmarker: null,
+  exercise: null,
+  isRendering: false,
+  isLoading: false,
+  cameraPosition: "front",
+  numberOfCameras: 0,
+  isRecording: false,
+  activeModels: { faceLandmark: true, handLandmark: true, poseLandmark: true },
+  holisticData: {
+    poseLandmarks: [],
+    faceLandmarks: [],
+    leftHandLandmarks: [],
+    rightHandLandmarks: [],
+  },
+  fsm: {
+    state: "Idle",
     transitions: {
       Idle: { start: "Loading" },
       Loading: { ready: "Ready", error: "Idle" },
@@ -110,35 +101,65 @@ export const state = {
       SwitchingCamera: { completeSwitch: "Streaming" },
       Stopped: { restart: "Idle" },
     } as StateTransitions,
-    transition<T extends keyof StateTransitions>(
+    transition: function <T extends keyof StateTransitions>(
       event: keyof StateTransitions[T]
     ) {
       const currentState = this.state as T;
       const nextState = this.transitions[currentState]?.[event];
       if (nextState) {
-        console.log(`Transition: ${this.state} -> ${nextState}`);
+        logger.info(`Transition: ${this.state} -> ${nextState}`);
         this.state = nextState as keyof StateTransitions;
         return true;
-      } else {
-        console.error(
-          `Invalid transition from ${this.state} on ${JSON.stringify(event)}`
-        );
-        return false;
       }
+      logger.error(
+        `Invalid transition from ${this.state} with event ${String(event)}`
+      );
+      return false;
     },
   },
+  set: (partial) =>
+    set((state) => {
+      const newState = { ...state, ...partial };
+      debouncedRedraw();
+      return newState;
+    }),
+}));
+
+export const toggleModel = (
+  activeModels: Record<
+    "faceLandmark" | "handLandmark" | "poseLandmark",
+    boolean
+  >,
+  modelName: "faceLandmark" | "handLandmark" | "poseLandmark"
+) => {
+  activeModels[modelName] = !activeModels[modelName];
+  logger.info(
+    `${modelName} is now ${activeModels[modelName] ? "enabled" : "disabled"}`
+  );
+  debouncedRedraw();
 };
 
-// Add a pose to recorded frames
-export const addPose = (poses: HolisticData) => {
-  const currentTime = performance.now() / 1000;
-  state.recordedFrames([
-    ...state.recordedFrames(),
-    { timestamp: currentTime, poses: JSON.stringify(poses) },
-  ]);
+export const resetState = () => {
+  logger.info("Resetting state");
+  useStore.set({
+    recordedFrames: [],
+    appState: "Pre",
+    videoElement: null,
+    canvasElement: null,
+    holistic: null,
+    exercise: null,
+    cameraPosition: "front",
+    numberOfCameras: 0,
+    isRendering: false,
+    isLoading: false,
+    isRecording: false,
+  });
+
+  CameraPreview.stop().catch((error) => {
+    logger.warn("Error stopping camera during reset:", error);
+  });
 };
 
-// Draw landmarks on the canvas
 export const drawLandmarks = (
   activeModels: Record<string, boolean>,
   ctx: CanvasRenderingContext2D,
@@ -150,7 +171,6 @@ export const drawLandmarks = (
   }
 ) => {
   const drawingUtils = new DrawingUtils(ctx);
-  // Draw Pose Landmarks
 
   if (results.poseLandmarks && activeModels.poseLandmark) {
     drawingUtils.drawLandmarks(results.poseLandmarks, {
@@ -168,7 +188,6 @@ export const drawLandmarks = (
   }
 
   if (activeModels.handLandmark) {
-    // Draw Left Hand Landmarks
     if (results.leftHandLandmarks) {
       drawingUtils.drawLandmarks(results.leftHandLandmarks, {
         color: options.hands.color,
@@ -183,8 +202,6 @@ export const drawLandmarks = (
         }
       );
     }
-
-    // Draw Right Hand Landmarks
     if (results.rightHandLandmarks) {
       drawingUtils.drawLandmarks(results.rightHandLandmarks, {
         color: options.hands.color,
@@ -200,7 +217,7 @@ export const drawLandmarks = (
       );
     }
   }
-  // Draw Face Landmarks
+
   if (results.faceLandmarks && activeModels.faceLandmark) {
     drawingUtils.drawConnectors(
       results.faceLandmarks,
@@ -221,93 +238,81 @@ export const drawLandmarks = (
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_LIPS),
-      { color: "pink", lineWidth: options.face.lineWidth }
+      {
+        color: "pink",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_LEFT_EYE),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_LEFT_EYEBROW),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_LEFT_IRIS),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_RIGHT_EYEBROW),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_RIGHT_IRIS),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_RIGHT_EYE),
-      { color: "cyan", lineWidth: options.face.lineWidth }
+      {
+        color: "cyan",
+        lineWidth: options.face.lineWidth,
+      }
     );
     drawingUtils.drawConnectors(
       results.faceLandmarks,
       convertConnections(window.FACEMESH_FACE_OVAL),
-      { color: "white", lineWidth: options.face.lineWidth }
+      {
+        color: "white",
+        lineWidth: options.face.lineWidth,
+      }
     );
   }
+};
 
-  // Call exercise-specific processing if available
-  // if (state.exercise) {
-  //   if (results.poseLandmarks) {
-  //     state.exercise.processLandmarks(results.poseLandmarks, ctx);
-  //   }
-  //   if (results.leftHandLandmarks) {
-  //     state.exercise.processLandmarks(results.leftHandLandmarks, ctx);
-  //   }
-  //   if (results.rightHandLandmarks) {
-  //     state.exercise.processLandmarks(results.rightHandLandmarks, ctx);
-  //   }
-  //   if (results.faceLandmarks) {
-  //     state.exercise.processLandmarks(results.faceLandmarks, ctx);
-  //   }
-  // }
-};
-// export const drawLandmarks = (ctx: CanvasRenderingContext2D, poses: Pose[]) => {
-//   const drawingUtils = new DrawingUtils(ctx);
-//   poses.forEach((pose) => {
-//     drawingUtils.drawLandmarks(pose, { color: "red", radius: 5 });
-//     drawingUtils.drawConnectors(
-//       pose,
-//       convertConnections(window.POSE_CONNECTIONS),
-//       {
-//         color: "white",
-//         lineWidth: 2,
-//       }
-//     );
-//
-//     if (state.exercise) {
-//       state.exercise.processLandmarks(pose, ctx);
-//     }
-//   });
-// };
-export const setExerciseHandler = (exercise: Exercise | null) => {
-  state.exercise = exercise;
-};
-// Helper function for converting connections
 export const convertConnections = (connections: [number, number][]) =>
   connections.map(([start, end]) => ({ start, end }));
 
 export const saveRecording = async () => {
-  console.log(state.recordedFrames());
+  logger.info("Saving recording...");
   try {
-    const data = JSON.stringify(state.recordedFrames, null, 2);
-    const fileName = `pose_recording_${new Date().toISOString()}.json`;
+    const data = JSON.stringify(useStore.getState().recordedFrames, null, 2);
+    const fileName = sanitizeFilename(
+      `pose_recording_${new Date().toISOString()}.json`
+    );
 
-    // Write to filesystem
     const fileUri = await Filesystem.writeFile({
       path: fileName,
       data,
@@ -316,25 +321,23 @@ export const saveRecording = async () => {
     });
 
     if (Capacitor.getPlatform() === "web") {
-      // If platform is web, create a downloadable link
       const blob = new Blob([data], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = fileName;
       a.click();
-      URL.revokeObjectURL(url); // Cleanup
-      console.log("File saved for web as downloadable link");
+      URL.revokeObjectURL(url);
+      logger.info("File saved for web as downloadable link.");
     } else {
-      // For native platforms, use the Share API
       await Share.share({
         title: "Pose Recording",
         url: fileUri.uri,
         dialogTitle: "Share Pose Recording",
       });
-      console.log("Recording saved and shared successfully:", fileUri.uri);
+      logger.info("Recording saved and shared successfully:", fileUri.uri);
     }
   } catch (error) {
-    console.error("Error saving or sharing recording:", error);
+    logger.error("Error saving or sharing recording:", error);
   }
 };

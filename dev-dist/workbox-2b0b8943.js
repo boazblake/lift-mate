@@ -7,23 +7,6 @@ define(['exports'], (function (exports) { 'use strict';
 
     /*
       Copyright 2019 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * Claim any currently available clients once the service worker
-     * becomes active. This is normally used in conjunction with `skipWaiting()`.
-     *
-     * @memberof workbox-core
-     */
-    function clientsClaim() {
-      self.addEventListener('activate', () => self.clients.claim());
-    }
-
-    /*
-      Copyright 2019 Google LLC
       Use of this source code is governed by an MIT-style
       license that can be found in the LICENSE file or at
       https://opensource.org/licenses/MIT.
@@ -85,7 +68,7 @@ define(['exports'], (function (exports) { 'use strict';
       license that can be found in the LICENSE file or at
       https://opensource.org/licenses/MIT.
     */
-    const messages = {
+    const messages$1 = {
       'invalid-value': ({
         paramName,
         validValueDescription,
@@ -359,7 +342,7 @@ define(['exports'], (function (exports) { 'use strict';
       https://opensource.org/licenses/MIT.
     */
     const generatorFunction = (code, details = {}) => {
-      const message = messages[code];
+      const message = messages$1[code];
       if (!message) {
         throw new Error(`Unable to find message for code '${code}'.`);
       }
@@ -1199,6 +1182,39 @@ define(['exports'], (function (exports) { 'use strict';
       return route;
     }
 
+    // @ts-ignore
+    try {
+      self['workbox:strategies:7.2.0'] && _();
+    } catch (e) {}
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    const cacheOkAndOpaquePlugin = {
+      /**
+       * Returns a valid response (to allow caching) if the status is 200 (OK) or
+       * 0 (opaque).
+       *
+       * @param {Object} options
+       * @param {Response} options.response
+       * @return {Response|null}
+       *
+       * @private
+       */
+      cacheWillUpdate: async ({
+        response
+      }) => {
+        if (response.status === 200 || response.status === 0) {
+          return response;
+        }
+        return null;
+      }
+    };
+
     /*
       Copyright 2018 Google LLC
 
@@ -1245,341 +1261,6 @@ define(['exports'], (function (exports) { 'use strict';
         return _cacheNameDetails.suffix;
       }
     };
-
-    /*
-      Copyright 2020 Google LLC
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * A utility method that makes it easier to use `event.waitUntil` with
-     * async functions and return the result.
-     *
-     * @param {ExtendableEvent} event
-     * @param {Function} asyncFn
-     * @return {Function}
-     * @private
-     */
-    function waitUntil(event, asyncFn) {
-      const returnPromise = asyncFn();
-      event.waitUntil(returnPromise);
-      return returnPromise;
-    }
-
-    // @ts-ignore
-    try {
-      self['workbox:precaching:7.2.0'] && _();
-    } catch (e) {}
-
-    /*
-      Copyright 2018 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    // Name of the search parameter used to store revision info.
-    const REVISION_SEARCH_PARAM = '__WB_REVISION__';
-    /**
-     * Converts a manifest entry into a versioned URL suitable for precaching.
-     *
-     * @param {Object|string} entry
-     * @return {string} A URL with versioning info.
-     *
-     * @private
-     * @memberof workbox-precaching
-     */
-    function createCacheKey(entry) {
-      if (!entry) {
-        throw new WorkboxError('add-to-cache-list-unexpected-type', {
-          entry
-        });
-      }
-      // If a precache manifest entry is a string, it's assumed to be a versioned
-      // URL, like '/app.abcd1234.js'. Return as-is.
-      if (typeof entry === 'string') {
-        const urlObject = new URL(entry, location.href);
-        return {
-          cacheKey: urlObject.href,
-          url: urlObject.href
-        };
-      }
-      const {
-        revision,
-        url
-      } = entry;
-      if (!url) {
-        throw new WorkboxError('add-to-cache-list-unexpected-type', {
-          entry
-        });
-      }
-      // If there's just a URL and no revision, then it's also assumed to be a
-      // versioned URL.
-      if (!revision) {
-        const urlObject = new URL(url, location.href);
-        return {
-          cacheKey: urlObject.href,
-          url: urlObject.href
-        };
-      }
-      // Otherwise, construct a properly versioned URL using the custom Workbox
-      // search parameter along with the revision info.
-      const cacheKeyURL = new URL(url, location.href);
-      const originalURL = new URL(url, location.href);
-      cacheKeyURL.searchParams.set(REVISION_SEARCH_PARAM, revision);
-      return {
-        cacheKey: cacheKeyURL.href,
-        url: originalURL.href
-      };
-    }
-
-    /*
-      Copyright 2020 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * A plugin, designed to be used with PrecacheController, to determine the
-     * of assets that were updated (or not updated) during the install event.
-     *
-     * @private
-     */
-    class PrecacheInstallReportPlugin {
-      constructor() {
-        this.updatedURLs = [];
-        this.notUpdatedURLs = [];
-        this.handlerWillStart = async ({
-          request,
-          state
-        }) => {
-          // TODO: `state` should never be undefined...
-          if (state) {
-            state.originalRequest = request;
-          }
-        };
-        this.cachedResponseWillBeUsed = async ({
-          event,
-          state,
-          cachedResponse
-        }) => {
-          if (event.type === 'install') {
-            if (state && state.originalRequest && state.originalRequest instanceof Request) {
-              // TODO: `state` should never be undefined...
-              const url = state.originalRequest.url;
-              if (cachedResponse) {
-                this.notUpdatedURLs.push(url);
-              } else {
-                this.updatedURLs.push(url);
-              }
-            }
-          }
-          return cachedResponse;
-        };
-      }
-    }
-
-    /*
-      Copyright 2020 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * A plugin, designed to be used with PrecacheController, to translate URLs into
-     * the corresponding cache key, based on the current revision info.
-     *
-     * @private
-     */
-    class PrecacheCacheKeyPlugin {
-      constructor({
-        precacheController
-      }) {
-        this.cacheKeyWillBeUsed = async ({
-          request,
-          params
-        }) => {
-          // Params is type any, can't change right now.
-          /* eslint-disable */
-          const cacheKey = (params === null || params === void 0 ? void 0 : params.cacheKey) || this._precacheController.getCacheKeyForURL(request.url);
-          /* eslint-enable */
-          return cacheKey ? new Request(cacheKey, {
-            headers: request.headers
-          }) : request;
-        };
-        this._precacheController = precacheController;
-      }
-    }
-
-    /*
-      Copyright 2018 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * @param {string} groupTitle
-     * @param {Array<string>} deletedURLs
-     *
-     * @private
-     */
-    const logGroup = (groupTitle, deletedURLs) => {
-      logger.groupCollapsed(groupTitle);
-      for (const url of deletedURLs) {
-        logger.log(url);
-      }
-      logger.groupEnd();
-    };
-    /**
-     * @param {Array<string>} deletedURLs
-     *
-     * @private
-     * @memberof workbox-precaching
-     */
-    function printCleanupDetails(deletedURLs) {
-      const deletionCount = deletedURLs.length;
-      if (deletionCount > 0) {
-        logger.groupCollapsed(`During precaching cleanup, ` + `${deletionCount} cached ` + `request${deletionCount === 1 ? ' was' : 's were'} deleted.`);
-        logGroup('Deleted Cache Requests', deletedURLs);
-        logger.groupEnd();
-      }
-    }
-
-    /*
-      Copyright 2018 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * @param {string} groupTitle
-     * @param {Array<string>} urls
-     *
-     * @private
-     */
-    function _nestedGroup(groupTitle, urls) {
-      if (urls.length === 0) {
-        return;
-      }
-      logger.groupCollapsed(groupTitle);
-      for (const url of urls) {
-        logger.log(url);
-      }
-      logger.groupEnd();
-    }
-    /**
-     * @param {Array<string>} urlsToPrecache
-     * @param {Array<string>} urlsAlreadyPrecached
-     *
-     * @private
-     * @memberof workbox-precaching
-     */
-    function printInstallDetails(urlsToPrecache, urlsAlreadyPrecached) {
-      const precachedCount = urlsToPrecache.length;
-      const alreadyPrecachedCount = urlsAlreadyPrecached.length;
-      if (precachedCount || alreadyPrecachedCount) {
-        let message = `Precaching ${precachedCount} file${precachedCount === 1 ? '' : 's'}.`;
-        if (alreadyPrecachedCount > 0) {
-          message += ` ${alreadyPrecachedCount} ` + `file${alreadyPrecachedCount === 1 ? ' is' : 's are'} already cached.`;
-        }
-        logger.groupCollapsed(message);
-        _nestedGroup(`View newly precached URLs.`, urlsToPrecache);
-        _nestedGroup(`View previously precached URLs.`, urlsAlreadyPrecached);
-        logger.groupEnd();
-      }
-    }
-
-    /*
-      Copyright 2019 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    let supportStatus;
-    /**
-     * A utility function that determines whether the current browser supports
-     * constructing a new `Response` from a `response.body` stream.
-     *
-     * @return {boolean} `true`, if the current browser can successfully
-     *     construct a `Response` from a `response.body` stream, `false` otherwise.
-     *
-     * @private
-     */
-    function canConstructResponseFromBodyStream() {
-      if (supportStatus === undefined) {
-        const testResponse = new Response('');
-        if ('body' in testResponse) {
-          try {
-            new Response(testResponse.body);
-            supportStatus = true;
-          } catch (error) {
-            supportStatus = false;
-          }
-        }
-        supportStatus = false;
-      }
-      return supportStatus;
-    }
-
-    /*
-      Copyright 2019 Google LLC
-
-      Use of this source code is governed by an MIT-style
-      license that can be found in the LICENSE file or at
-      https://opensource.org/licenses/MIT.
-    */
-    /**
-     * Allows developers to copy a response and modify its `headers`, `status`,
-     * or `statusText` values (the values settable via a
-     * [`ResponseInit`]{@link https://developer.mozilla.org/en-US/docs/Web/API/Response/Response#Syntax}
-     * object in the constructor).
-     * To modify these values, pass a function as the second argument. That
-     * function will be invoked with a single object with the response properties
-     * `{headers, status, statusText}`. The return value of this function will
-     * be used as the `ResponseInit` for the new `Response`. To change the values
-     * either modify the passed parameter(s) and return it, or return a totally
-     * new object.
-     *
-     * This method is intentionally limited to same-origin responses, regardless of
-     * whether CORS was used or not.
-     *
-     * @param {Response} response
-     * @param {Function} modifier
-     * @memberof workbox-core
-     */
-    async function copyResponse(response, modifier) {
-      let origin = null;
-      // If response.url isn't set, assume it's cross-origin and keep origin null.
-      if (response.url) {
-        const responseURL = new URL(response.url);
-        origin = responseURL.origin;
-      }
-      if (origin !== self.location.origin) {
-        throw new WorkboxError('cross-origin-copy-response', {
-          origin
-        });
-      }
-      const clonedResponse = response.clone();
-      // Create a fresh `ResponseInit` object by cloning the headers.
-      const responseInit = {
-        headers: new Headers(clonedResponse.headers),
-        status: clonedResponse.status,
-        statusText: clonedResponse.statusText
-      };
-      // Apply any user modifications.
-      const modifiedResponseInit = modifier ? modifier(responseInit) : responseInit;
-      // Create the new response from the body stream and `ResponseInit`
-      // modifications. Note: not all browsers support the Response.body stream,
-      // so fall back to reading the entire body into memory as a blob.
-      const body = canConstructResponseFromBodyStream() ? clonedResponse.body : await clonedResponse.blob();
-      return new Response(body, modifiedResponseInit);
-    }
 
     /*
       Copyright 2020 Google LLC
@@ -1711,11 +1392,6 @@ define(['exports'], (function (exports) { 'use strict';
     function timeout(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
-
-    // @ts-ignore
-    try {
-      self['workbox:strategies:7.2.0'] && _();
-    } catch (e) {}
 
     /*
       Copyright 2020 Google LLC
@@ -1867,7 +1543,7 @@ define(['exports'], (function (exports) { 'use strict';
           let fetchResponse;
           // See https://github.com/GoogleChrome/workbox/issues/1796
           fetchResponse = await fetch(request, request.mode === 'navigate' ? undefined : this._strategy.fetchOptions);
-          if ("development" !== 'production') {
+          if ("generateSW" !== 'production') {
             logger.debug(`Network request for ` + `'${getFriendlyURL(request.url)}' returned a response with ` + `status '${fetchResponse.status}'.`);
           }
           for (const callback of this.iterateCallbacks('fetchDidSucceed')) {
@@ -2443,6 +2119,689 @@ define(['exports'], (function (exports) { 'use strict';
      *
      * @memberof workbox-strategies.Strategy
      */
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    const messages = {
+      strategyStart: (strategyName, request) => `Using ${strategyName} to respond to '${getFriendlyURL(request.url)}'`,
+      printFinalResponse: response => {
+        if (response) {
+          logger.groupCollapsed(`View the final response here.`);
+          logger.log(response || '[No response returned]');
+          logger.groupEnd();
+        }
+      }
+    };
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * An implementation of a
+     * [network first](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#network-first-falling-back-to-cache)
+     * request strategy.
+     *
+     * By default, this strategy will cache responses with a 200 status code as
+     * well as [opaque responses](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/#opaque-responses).
+     * Opaque responses are are cross-origin requests where the response doesn't
+     * support [CORS](https://enable-cors.org/).
+     *
+     * If the network request fails, and there is no cache match, this will throw
+     * a `WorkboxError` exception.
+     *
+     * @extends workbox-strategies.Strategy
+     * @memberof workbox-strategies
+     */
+    class NetworkFirst extends Strategy {
+      /**
+       * @param {Object} [options]
+       * @param {string} [options.cacheName] Cache name to store and retrieve
+       * requests. Defaults to cache names provided by
+       * {@link workbox-core.cacheNames}.
+       * @param {Array<Object>} [options.plugins] [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}
+       * to use in conjunction with this caching strategy.
+       * @param {Object} [options.fetchOptions] Values passed along to the
+       * [`init`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
+       * of [non-navigation](https://github.com/GoogleChrome/workbox/issues/1796)
+       * `fetch()` requests made by this strategy.
+       * @param {Object} [options.matchOptions] [`CacheQueryOptions`](https://w3c.github.io/ServiceWorker/#dictdef-cachequeryoptions)
+       * @param {number} [options.networkTimeoutSeconds] If set, any network requests
+       * that fail to respond within the timeout will fallback to the cache.
+       *
+       * This option can be used to combat
+       * "[lie-fi]{@link https://developers.google.com/web/fundamentals/performance/poor-connectivity/#lie-fi}"
+       * scenarios.
+       */
+      constructor(options = {}) {
+        super(options);
+        // If this instance contains no plugins with a 'cacheWillUpdate' callback,
+        // prepend the `cacheOkAndOpaquePlugin` plugin to the plugins list.
+        if (!this.plugins.some(p => 'cacheWillUpdate' in p)) {
+          this.plugins.unshift(cacheOkAndOpaquePlugin);
+        }
+        this._networkTimeoutSeconds = options.networkTimeoutSeconds || 0;
+        {
+          if (this._networkTimeoutSeconds) {
+            finalAssertExports.isType(this._networkTimeoutSeconds, 'number', {
+              moduleName: 'workbox-strategies',
+              className: this.constructor.name,
+              funcName: 'constructor',
+              paramName: 'networkTimeoutSeconds'
+            });
+          }
+        }
+      }
+      /**
+       * @private
+       * @param {Request|string} request A request to run this strategy for.
+       * @param {workbox-strategies.StrategyHandler} handler The event that
+       *     triggered the request.
+       * @return {Promise<Response>}
+       */
+      async _handle(request, handler) {
+        const logs = [];
+        {
+          finalAssertExports.isInstance(request, Request, {
+            moduleName: 'workbox-strategies',
+            className: this.constructor.name,
+            funcName: 'handle',
+            paramName: 'makeRequest'
+          });
+        }
+        const promises = [];
+        let timeoutId;
+        if (this._networkTimeoutSeconds) {
+          const {
+            id,
+            promise
+          } = this._getTimeoutPromise({
+            request,
+            logs,
+            handler
+          });
+          timeoutId = id;
+          promises.push(promise);
+        }
+        const networkPromise = this._getNetworkPromise({
+          timeoutId,
+          request,
+          logs,
+          handler
+        });
+        promises.push(networkPromise);
+        const response = await handler.waitUntil((async () => {
+          // Promise.race() will resolve as soon as the first promise resolves.
+          return (await handler.waitUntil(Promise.race(promises))) || (
+          // If Promise.race() resolved with null, it might be due to a network
+          // timeout + a cache miss. If that were to happen, we'd rather wait until
+          // the networkPromise resolves instead of returning null.
+          // Note that it's fine to await an already-resolved promise, so we don't
+          // have to check to see if it's still "in flight".
+          await networkPromise);
+        })());
+        {
+          logger.groupCollapsed(messages.strategyStart(this.constructor.name, request));
+          for (const log of logs) {
+            logger.log(log);
+          }
+          messages.printFinalResponse(response);
+          logger.groupEnd();
+        }
+        if (!response) {
+          throw new WorkboxError('no-response', {
+            url: request.url
+          });
+        }
+        return response;
+      }
+      /**
+       * @param {Object} options
+       * @param {Request} options.request
+       * @param {Array} options.logs A reference to the logs array
+       * @param {Event} options.event
+       * @return {Promise<Response>}
+       *
+       * @private
+       */
+      _getTimeoutPromise({
+        request,
+        logs,
+        handler
+      }) {
+        let timeoutId;
+        const timeoutPromise = new Promise(resolve => {
+          const onNetworkTimeout = async () => {
+            {
+              logs.push(`Timing out the network response at ` + `${this._networkTimeoutSeconds} seconds.`);
+            }
+            resolve(await handler.cacheMatch(request));
+          };
+          timeoutId = setTimeout(onNetworkTimeout, this._networkTimeoutSeconds * 1000);
+        });
+        return {
+          promise: timeoutPromise,
+          id: timeoutId
+        };
+      }
+      /**
+       * @param {Object} options
+       * @param {number|undefined} options.timeoutId
+       * @param {Request} options.request
+       * @param {Array} options.logs A reference to the logs Array.
+       * @param {Event} options.event
+       * @return {Promise<Response>}
+       *
+       * @private
+       */
+      async _getNetworkPromise({
+        timeoutId,
+        request,
+        logs,
+        handler
+      }) {
+        let error;
+        let response;
+        try {
+          response = await handler.fetchAndCachePut(request);
+        } catch (fetchError) {
+          if (fetchError instanceof Error) {
+            error = fetchError;
+          }
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        {
+          if (response) {
+            logs.push(`Got response from network.`);
+          } else {
+            logs.push(`Unable to get a response from the network. Will respond ` + `with a cached response.`);
+          }
+        }
+        if (error || !response) {
+          response = await handler.cacheMatch(request);
+          {
+            if (response) {
+              logs.push(`Found a cached response in the '${this.cacheName}'` + ` cache.`);
+            } else {
+              logs.push(`No response found in the '${this.cacheName}' cache.`);
+            }
+          }
+        }
+        return response;
+      }
+    }
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * An implementation of a
+     * [stale-while-revalidate](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#stale-while-revalidate)
+     * request strategy.
+     *
+     * Resources are requested from both the cache and the network in parallel.
+     * The strategy will respond with the cached version if available, otherwise
+     * wait for the network response. The cache is updated with the network response
+     * with each successful request.
+     *
+     * By default, this strategy will cache responses with a 200 status code as
+     * well as [opaque responses](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/#opaque-responses).
+     * Opaque responses are cross-origin requests where the response doesn't
+     * support [CORS](https://enable-cors.org/).
+     *
+     * If the network request fails, and there is no cache match, this will throw
+     * a `WorkboxError` exception.
+     *
+     * @extends workbox-strategies.Strategy
+     * @memberof workbox-strategies
+     */
+    class StaleWhileRevalidate extends Strategy {
+      /**
+       * @param {Object} [options]
+       * @param {string} [options.cacheName] Cache name to store and retrieve
+       * requests. Defaults to cache names provided by
+       * {@link workbox-core.cacheNames}.
+       * @param {Array<Object>} [options.plugins] [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}
+       * to use in conjunction with this caching strategy.
+       * @param {Object} [options.fetchOptions] Values passed along to the
+       * [`init`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Parameters)
+       * of [non-navigation](https://github.com/GoogleChrome/workbox/issues/1796)
+       * `fetch()` requests made by this strategy.
+       * @param {Object} [options.matchOptions] [`CacheQueryOptions`](https://w3c.github.io/ServiceWorker/#dictdef-cachequeryoptions)
+       */
+      constructor(options = {}) {
+        super(options);
+        // If this instance contains no plugins with a 'cacheWillUpdate' callback,
+        // prepend the `cacheOkAndOpaquePlugin` plugin to the plugins list.
+        if (!this.plugins.some(p => 'cacheWillUpdate' in p)) {
+          this.plugins.unshift(cacheOkAndOpaquePlugin);
+        }
+      }
+      /**
+       * @private
+       * @param {Request|string} request A request to run this strategy for.
+       * @param {workbox-strategies.StrategyHandler} handler The event that
+       *     triggered the request.
+       * @return {Promise<Response>}
+       */
+      async _handle(request, handler) {
+        const logs = [];
+        {
+          finalAssertExports.isInstance(request, Request, {
+            moduleName: 'workbox-strategies',
+            className: this.constructor.name,
+            funcName: 'handle',
+            paramName: 'request'
+          });
+        }
+        const fetchAndCachePromise = handler.fetchAndCachePut(request).catch(() => {
+          // Swallow this error because a 'no-response' error will be thrown in
+          // main handler return flow. This will be in the `waitUntil()` flow.
+        });
+        void handler.waitUntil(fetchAndCachePromise);
+        let response = await handler.cacheMatch(request);
+        let error;
+        if (response) {
+          {
+            logs.push(`Found a cached response in the '${this.cacheName}'` + ` cache. Will update with the network response in the background.`);
+          }
+        } else {
+          {
+            logs.push(`No response found in the '${this.cacheName}' cache. ` + `Will wait for the network response.`);
+          }
+          try {
+            // NOTE(philipwalton): Really annoying that we have to type cast here.
+            // https://github.com/microsoft/TypeScript/issues/20006
+            response = await fetchAndCachePromise;
+          } catch (err) {
+            if (err instanceof Error) {
+              error = err;
+            }
+          }
+        }
+        {
+          logger.groupCollapsed(messages.strategyStart(this.constructor.name, request));
+          for (const log of logs) {
+            logger.log(log);
+          }
+          messages.printFinalResponse(response);
+          logger.groupEnd();
+        }
+        if (!response) {
+          throw new WorkboxError('no-response', {
+            url: request.url,
+            error
+          });
+        }
+        return response;
+      }
+    }
+
+    /*
+      Copyright 2019 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * Claim any currently available clients once the service worker
+     * becomes active. This is normally used in conjunction with `skipWaiting()`.
+     *
+     * @memberof workbox-core
+     */
+    function clientsClaim() {
+      self.addEventListener('activate', () => self.clients.claim());
+    }
+
+    /*
+      Copyright 2020 Google LLC
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * A utility method that makes it easier to use `event.waitUntil` with
+     * async functions and return the result.
+     *
+     * @param {ExtendableEvent} event
+     * @param {Function} asyncFn
+     * @return {Function}
+     * @private
+     */
+    function waitUntil(event, asyncFn) {
+      const returnPromise = asyncFn();
+      event.waitUntil(returnPromise);
+      return returnPromise;
+    }
+
+    // @ts-ignore
+    try {
+      self['workbox:precaching:7.2.0'] && _();
+    } catch (e) {}
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    // Name of the search parameter used to store revision info.
+    const REVISION_SEARCH_PARAM = '__WB_REVISION__';
+    /**
+     * Converts a manifest entry into a versioned URL suitable for precaching.
+     *
+     * @param {Object|string} entry
+     * @return {string} A URL with versioning info.
+     *
+     * @private
+     * @memberof workbox-precaching
+     */
+    function createCacheKey(entry) {
+      if (!entry) {
+        throw new WorkboxError('add-to-cache-list-unexpected-type', {
+          entry
+        });
+      }
+      // If a precache manifest entry is a string, it's assumed to be a versioned
+      // URL, like '/app.abcd1234.js'. Return as-is.
+      if (typeof entry === 'string') {
+        const urlObject = new URL(entry, location.href);
+        return {
+          cacheKey: urlObject.href,
+          url: urlObject.href
+        };
+      }
+      const {
+        revision,
+        url
+      } = entry;
+      if (!url) {
+        throw new WorkboxError('add-to-cache-list-unexpected-type', {
+          entry
+        });
+      }
+      // If there's just a URL and no revision, then it's also assumed to be a
+      // versioned URL.
+      if (!revision) {
+        const urlObject = new URL(url, location.href);
+        return {
+          cacheKey: urlObject.href,
+          url: urlObject.href
+        };
+      }
+      // Otherwise, construct a properly versioned URL using the custom Workbox
+      // search parameter along with the revision info.
+      const cacheKeyURL = new URL(url, location.href);
+      const originalURL = new URL(url, location.href);
+      cacheKeyURL.searchParams.set(REVISION_SEARCH_PARAM, revision);
+      return {
+        cacheKey: cacheKeyURL.href,
+        url: originalURL.href
+      };
+    }
+
+    /*
+      Copyright 2020 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * A plugin, designed to be used with PrecacheController, to determine the
+     * of assets that were updated (or not updated) during the install event.
+     *
+     * @private
+     */
+    class PrecacheInstallReportPlugin {
+      constructor() {
+        this.updatedURLs = [];
+        this.notUpdatedURLs = [];
+        this.handlerWillStart = async ({
+          request,
+          state
+        }) => {
+          // TODO: `state` should never be undefined...
+          if (state) {
+            state.originalRequest = request;
+          }
+        };
+        this.cachedResponseWillBeUsed = async ({
+          event,
+          state,
+          cachedResponse
+        }) => {
+          if (event.type === 'install') {
+            if (state && state.originalRequest && state.originalRequest instanceof Request) {
+              // TODO: `state` should never be undefined...
+              const url = state.originalRequest.url;
+              if (cachedResponse) {
+                this.notUpdatedURLs.push(url);
+              } else {
+                this.updatedURLs.push(url);
+              }
+            }
+          }
+          return cachedResponse;
+        };
+      }
+    }
+
+    /*
+      Copyright 2020 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * A plugin, designed to be used with PrecacheController, to translate URLs into
+     * the corresponding cache key, based on the current revision info.
+     *
+     * @private
+     */
+    class PrecacheCacheKeyPlugin {
+      constructor({
+        precacheController
+      }) {
+        this.cacheKeyWillBeUsed = async ({
+          request,
+          params
+        }) => {
+          // Params is type any, can't change right now.
+          /* eslint-disable */
+          const cacheKey = (params === null || params === void 0 ? void 0 : params.cacheKey) || this._precacheController.getCacheKeyForURL(request.url);
+          /* eslint-enable */
+          return cacheKey ? new Request(cacheKey, {
+            headers: request.headers
+          }) : request;
+        };
+        this._precacheController = precacheController;
+      }
+    }
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * @param {string} groupTitle
+     * @param {Array<string>} deletedURLs
+     *
+     * @private
+     */
+    const logGroup = (groupTitle, deletedURLs) => {
+      logger.groupCollapsed(groupTitle);
+      for (const url of deletedURLs) {
+        logger.log(url);
+      }
+      logger.groupEnd();
+    };
+    /**
+     * @param {Array<string>} deletedURLs
+     *
+     * @private
+     * @memberof workbox-precaching
+     */
+    function printCleanupDetails(deletedURLs) {
+      const deletionCount = deletedURLs.length;
+      if (deletionCount > 0) {
+        logger.groupCollapsed(`During precaching cleanup, ` + `${deletionCount} cached ` + `request${deletionCount === 1 ? ' was' : 's were'} deleted.`);
+        logGroup('Deleted Cache Requests', deletedURLs);
+        logger.groupEnd();
+      }
+    }
+
+    /*
+      Copyright 2018 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * @param {string} groupTitle
+     * @param {Array<string>} urls
+     *
+     * @private
+     */
+    function _nestedGroup(groupTitle, urls) {
+      if (urls.length === 0) {
+        return;
+      }
+      logger.groupCollapsed(groupTitle);
+      for (const url of urls) {
+        logger.log(url);
+      }
+      logger.groupEnd();
+    }
+    /**
+     * @param {Array<string>} urlsToPrecache
+     * @param {Array<string>} urlsAlreadyPrecached
+     *
+     * @private
+     * @memberof workbox-precaching
+     */
+    function printInstallDetails(urlsToPrecache, urlsAlreadyPrecached) {
+      const precachedCount = urlsToPrecache.length;
+      const alreadyPrecachedCount = urlsAlreadyPrecached.length;
+      if (precachedCount || alreadyPrecachedCount) {
+        let message = `Precaching ${precachedCount} file${precachedCount === 1 ? '' : 's'}.`;
+        if (alreadyPrecachedCount > 0) {
+          message += ` ${alreadyPrecachedCount} ` + `file${alreadyPrecachedCount === 1 ? ' is' : 's are'} already cached.`;
+        }
+        logger.groupCollapsed(message);
+        _nestedGroup(`View newly precached URLs.`, urlsToPrecache);
+        _nestedGroup(`View previously precached URLs.`, urlsAlreadyPrecached);
+        logger.groupEnd();
+      }
+    }
+
+    /*
+      Copyright 2019 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    let supportStatus;
+    /**
+     * A utility function that determines whether the current browser supports
+     * constructing a new `Response` from a `response.body` stream.
+     *
+     * @return {boolean} `true`, if the current browser can successfully
+     *     construct a `Response` from a `response.body` stream, `false` otherwise.
+     *
+     * @private
+     */
+    function canConstructResponseFromBodyStream() {
+      if (supportStatus === undefined) {
+        const testResponse = new Response('');
+        if ('body' in testResponse) {
+          try {
+            new Response(testResponse.body);
+            supportStatus = true;
+          } catch (error) {
+            supportStatus = false;
+          }
+        }
+        supportStatus = false;
+      }
+      return supportStatus;
+    }
+
+    /*
+      Copyright 2019 Google LLC
+
+      Use of this source code is governed by an MIT-style
+      license that can be found in the LICENSE file or at
+      https://opensource.org/licenses/MIT.
+    */
+    /**
+     * Allows developers to copy a response and modify its `headers`, `status`,
+     * or `statusText` values (the values settable via a
+     * [`ResponseInit`]{@link https://developer.mozilla.org/en-US/docs/Web/API/Response/Response#Syntax}
+     * object in the constructor).
+     * To modify these values, pass a function as the second argument. That
+     * function will be invoked with a single object with the response properties
+     * `{headers, status, statusText}`. The return value of this function will
+     * be used as the `ResponseInit` for the new `Response`. To change the values
+     * either modify the passed parameter(s) and return it, or return a totally
+     * new object.
+     *
+     * This method is intentionally limited to same-origin responses, regardless of
+     * whether CORS was used or not.
+     *
+     * @param {Response} response
+     * @param {Function} modifier
+     * @memberof workbox-core
+     */
+    async function copyResponse(response, modifier) {
+      let origin = null;
+      // If response.url isn't set, assume it's cross-origin and keep origin null.
+      if (response.url) {
+        const responseURL = new URL(response.url);
+        origin = responseURL.origin;
+      }
+      if (origin !== self.location.origin) {
+        throw new WorkboxError('cross-origin-copy-response', {
+          origin
+        });
+      }
+      const clonedResponse = response.clone();
+      // Create a fresh `ResponseInit` object by cloning the headers.
+      const responseInit = {
+        headers: new Headers(clonedResponse.headers),
+        status: clonedResponse.status,
+        statusText: clonedResponse.statusText
+      };
+      // Apply any user modifications.
+      const modifiedResponseInit = modifier ? modifier(responseInit) : responseInit;
+      // Create the new response from the body stream and `ResponseInit`
+      // modifications. Note: not all browsers support the Response.body stream,
+      // so fall back to reading the entire body into memory as a blob.
+      const body = canConstructResponseFromBodyStream() ? clonedResponse.body : await clonedResponse.blob();
+      return new Response(body, modifiedResponseInit);
+    }
 
     /*
       Copyright 2020 Google LLC
@@ -3382,6 +3741,8 @@ define(['exports'], (function (exports) { 'use strict';
     }
 
     exports.NavigationRoute = NavigationRoute;
+    exports.NetworkFirst = NetworkFirst;
+    exports.StaleWhileRevalidate = StaleWhileRevalidate;
     exports.cleanupOutdatedCaches = cleanupOutdatedCaches;
     exports.clientsClaim = clientsClaim;
     exports.createHandlerBoundToURL = createHandlerBoundToURL;
