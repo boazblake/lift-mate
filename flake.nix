@@ -14,18 +14,11 @@
           config.allowUnfree = true;
         };
 
-        # macOS frameworks needed for iOS native build
-        # darwinFrameworks = pkgs.lib.optionals pkgs.stdenv.isDarwin (
-        #   with pkgs.darwin.apple_sdk.frameworks; [
-        #     CoreFoundation
-        #     CoreGraphics
-        #     AVFoundation
-        #     WebKit
-        #     UserNotifications
-        #   ]
-        # );
+        geminiScript = pkgs.writeScriptBin "gemini" ''
+          #!/bin/sh
+          exec ${pkgs.nodejs_22}/bin/npx --prefix $PWD @google/gemini-cli "$@"
+        '';
 
-        # Tools needed only on macOS
         darwinTools = pkgs.lib.optionals pkgs.stdenv.isDarwin [
           pkgs.ruby_3_1
           pkgs.bundler
@@ -39,9 +32,10 @@
             pkgs.nodejs_22
             pkgs.typescript
             pkgs.mkcert
-          ] 
-          # ++ darwinFrameworks
-          ++ darwinTools;
+            pkgs.nodePackages.npm
+            pkgs.git
+            geminiScript
+          ] ++ darwinTools;
 
           shellHook = ''
             export NODE_ENV=development
@@ -67,12 +61,41 @@
 
             if [ ! -f ".cert/cert.pem" ]; then
               echo "Generating local SSL certs..."
-              node --runmake:certs
+              node --run make:certs
+            fi
+
+            # Create config directory if it doesn't exist
+            mkdir -p ~/.config/gemini-cli
+
+            # Set up default configuration
+            if [ ! -f ~/.config/gemini-cli/config.json ]; then
+              echo "Creating default Gemini CLI configuration..."
+              cat > ~/.config/gemini-cli/config.json << EOL
+            {
+              "user": {
+                "name": "Boaz Blake",
+                "email": "boazblake@gmail.com"
+              },
+              "default_project": "liftmate-dev",
+              "location": "Houston, TX"
+            }
+            EOL
+            fi
+
+            # Check if already authenticated
+            if [ ! -f ~/.config/gemini-cli/credentials.json ]; then
+              echo "Please authenticate with Gemini CLI:"
+              echo "Run 'gemini auth login' to set up your authentication"
+            else
+              echo "Gemini CLI authentication found"
             fi
 
             echo "Dev shell ready. Common commands:"
             echo "  node --run startweb      # Run web dev build"
-            echo "  node --run startios   # Build and run iOS"
+            echo "  node --run startios      # Build and run iOS"
+            echo "  gemini                   # Run Gemini CLI"
+            echo "  gemini auth login        # Authenticate with Gemini"
+            echo "  gemini config show       # Show current configuration"
           '';
         };
       }

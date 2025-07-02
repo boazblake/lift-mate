@@ -78,56 +78,8 @@ define(['./workbox-2b0b8943'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
-    "url": "assets/index-BzFA5BWQ.css",
-    "revision": null
-  }, {
-    "url": "assets/index-legacy-CA7N1z8I.js",
-    "revision": null
-  }, {
-    "url": "assets/index-qbjYfPwV.js",
-    "revision": null
-  }, {
-    "url": "assets/model.native-BCtt7Ban.js",
-    "revision": null
-  }, {
-    "url": "assets/model.native-legacy-CKrRQHpk.js",
-    "revision": null
-  }, {
-    "url": "assets/model.web-Dzq8cDzh.js",
-    "revision": null
-  }, {
-    "url": "assets/model.web-legacy-CmVM54X2.js",
-    "revision": null
-  }, {
-    "url": "assets/polyfills-legacy-CVg3APQ8.js",
-    "revision": null
-  }, {
-    "url": "assets/web-_j0Bg-Pe.js",
-    "revision": null
-  }, {
-    "url": "assets/web-BnJ_XJTe.js",
-    "revision": null
-  }, {
-    "url": "assets/web-C8fYKdaw.js",
-    "revision": null
-  }, {
-    "url": "assets/web-legacy-DbK1TGNu.js",
-    "revision": null
-  }, {
-    "url": "assets/web-legacy-DlsaUGXI.js",
-    "revision": null
-  }, {
-    "url": "assets/web-legacy-nCtDbWuj.js",
-    "revision": null
-  }, {
-    "url": "index.html",
-    "revision": "9fee3a82201b0a631b9745bf6e47c199"
-  }, {
-    "url": "registerSW.js",
-    "revision": "1872c500de691dce40960bb85481de07"
-  }, {
     "url": "manifest.webmanifest",
-    "revision": "f6f8df584655d96b487eb36c18492fa1"
+    "revision": "07ecffc60c07c791db0e4c68c27a43c9"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
