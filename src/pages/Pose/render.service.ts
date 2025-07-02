@@ -70,6 +70,12 @@ export const renderService = {
             data.poseLandmarks.map(transformLandmark),
             defaultDrawOptions.pose
           );
+          drawConnectors(
+            ctx,
+            data.poseLandmarks.map(transformLandmark),
+            POSE_CONNECTIONS,
+            defaultDrawOptions.pose
+          );
         }
         if (features().hands) {
           if (data.leftHandLandmarks?.length) {
@@ -78,11 +84,23 @@ export const renderService = {
               data.leftHandLandmarks.map(transformLandmark),
               defaultDrawOptions.hands
             );
+            drawConnectors(
+              ctx,
+              data.leftHandLandmarks.map(transformLandmark),
+              HAND_CONNECTIONS,
+              defaultDrawOptions.hands
+            );
           }
           if (data.rightHandLandmarks?.length) {
             drawLandmarks(
               ctx,
               data.rightHandLandmarks.map(transformLandmark),
+              defaultDrawOptions.hands
+            );
+            drawConnectors(
+              ctx,
+              data.rightHandLandmarks.map(transformLandmark),
+              HAND_CONNECTIONS,
               defaultDrawOptions.hands
             );
           }
@@ -121,7 +139,6 @@ function drawLandmarks(
   ctx.strokeStyle = options.color;
   ctx.lineWidth = options.lineWidth;
 
-  const { width, height } = ctx.canvas;
   landmarks.forEach((point) => {
     console.log("Drawing point:", point.x, point.y);
     ctx.beginPath();
@@ -129,3 +146,39 @@ function drawLandmarks(
     ctx.fill();
   });
 }
+
+function drawConnectors(
+  ctx: CanvasRenderingContext2D,
+  landmarks: any[],
+  connections: number[][],
+  options: DrawOptions["pose" | "hands" | "face"]
+) {
+  ctx.strokeStyle = options.color;
+  ctx.lineWidth = options.lineWidth;
+
+  connections.forEach(([start, end]) => {
+    if (landmarks[start] && landmarks[end]) {
+      ctx.beginPath();
+      ctx.moveTo(landmarks[start].x, landmarks[start].y);
+      ctx.lineTo(landmarks[end].x, landmarks[end].y);
+      ctx.stroke();
+    }
+  });
+}
+
+const POSE_CONNECTIONS = [
+  [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5],
+  [5, 6], [6, 8], [9, 10], [11, 12], [11, 13], [13, 15],
+  [15, 17], [17, 19], [19, 15], [15, 21], [12, 14], [14, 16],
+  [16, 18], [18, 20], [20, 16], [16, 22], [11, 23], [12, 24],
+  [23, 24], [23, 25], [24, 26], [25, 27], [26, 28], [27, 29],
+  [28, 30], [29, 31], [30, 32], [31, 32]
+];
+
+const HAND_CONNECTIONS = [
+  [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+  [0, 5], [5, 6], [6, 7], [7, 8], // Index
+  [0, 9], [9, 10], [10, 11], [11, 12], // Middle
+  [0, 13], [13, 14], [14, 15], [15, 16], // Ring
+  [0, 17], [17, 18], [18, 19], [19, 20]  // Pinky
+];
