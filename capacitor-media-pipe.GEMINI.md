@@ -48,6 +48,71 @@ This plugin is a critical component of the application's architecture when runni
 
 This hybrid approach ensures the application achieves the highest possible performance on mobile while still providing a fully functional experience on the web.
 
+## Building and Linking the Plugin
+
+The `capacitor-media-pipe` plugin is a local dependency, meaning its source code is part of your development environment rather than being pulled from a public npm registry. This requires specific steps to build the plugin and link it correctly to the `lift-mate` application.
+
+### 1. Clone/Locate the Plugin Source
+
+Ensure the `capacitor-media-pipe` plugin's source code is available in a directory accessible by the `lift-mate` project. As per `package.json`, it's expected to be at `../../capacitor-media-pipe` relative to the `lift-mate` project root.
+
+### 2. Build the Plugin
+
+Navigate to the plugin's root directory (e.g., `/path/to/your/capacitor-media-pipe`) and build its web assets and native components.
+
+```bash
+cd /path/to/your/capacitor-media-pipe
+npm install
+npm run build
+npx cap sync
+```
+*   `npm install`: Installs the plugin's own dependencies.
+*   `npm run build`: Compiles the TypeScript code to JavaScript and prepares the web assets.
+*   `npx cap sync`: Syncs the plugin's web assets and native code with its own internal Capacitor project structure.
+
+### 3. Link the Plugin to `lift-mate`
+
+The `lift-mate` project's `package.json` already references the plugin using a `file:` protocol, which creates a symlink. This means `npm install` in the `lift-mate` project should handle the linking automatically.
+
+```bash
+# From the lift-mate project root
+npm install
+```
+This command will ensure the `capacitor-media-pipe` entry in `node_modules` is a symlink to your local plugin source.
+
+### 4. Sync Capacitor in `lift-mate`
+
+After building the plugin and ensuring it's linked, you must sync the `lift-mate` Capacitor project to pick up the plugin's native code.
+
+```bash
+# From the lift-mate project root
+npx cap sync ios
+npx cap sync android # If targeting Android
+```
+This command will:
+*   Copy the plugin's web assets into `lift-mate`'s `webDir` (e.g., `docs`).
+*   Update the native iOS/Android projects to include the plugin's native code.
+
+### 5. Install Native Dependencies (iOS Specific)
+
+For iOS, after `npx cap sync ios`, you *must* install the CocoaPods dependencies from within the iOS project directory.
+
+```bash
+# From the lift-mate project root
+cd ios/App
+pod install
+```
+This step is crucial for linking the native MediaPipe SDKs and other iOS dependencies that the plugin relies on.
+
+### 6. Open and Build in Native IDE
+
+Finally, open the native project in its respective IDE and build/run it on a device or emulator.
+
+*   **iOS:** Open `ios/App/App.xcworkspace` in Xcode.
+*   **Android:** Open the `android` folder in Android Studio.
+
+This ensures that the native code is compiled and integrated correctly.
+
 ## Native Integration Details
 
 ### Native Code Location
