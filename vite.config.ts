@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   console.log("Vite mode:", mode, "isSSL:", isSSL, "isMobile:", isMobile);
 
   return {
-    base: isMobile ? "/" : "/lift-mate/",
+    base: isMobile ? "/" : "/",
     plugins: [
       nodePolyfills({
         include: ["process"], // Polyfill process.env
@@ -51,9 +51,9 @@ export default defineConfig(({ mode }) => {
           theme_color: "#ffffff",
           icons: [
             {
-              src: "icon.png",
+              src: "icon.svg",
               sizes: "192x192",
-              type: "image/png",
+              type: "image/svg+xml",
             },
           ],
         },
@@ -76,6 +76,7 @@ export default defineConfig(({ mode }) => {
           __dirname,
           "./node_modules/zustand/vanilla"
         ), // Prevent React bindings
+        "capacitor-media-pipe": path.resolve(__dirname, "../capacitor-media-pipe"),
       },
     },
     build: {
@@ -83,7 +84,7 @@ export default defineConfig(({ mode }) => {
       assetsDir: "assets",
       minify: "terser",
       rollupOptions: {
-        external: ["react", "react-dom"], // Exclude React
+        external: ["react", "react-dom", "capacitor-media-pipe"], // Exclude React
       },
     },
     server:
