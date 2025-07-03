@@ -1,0 +1,29 @@
+ion-content {
+  --offset-bottom: auto!important;
+  --offset-top: auto!important;
+  --padding-bottom: 0!important;
+  --padding-end: 0!important;
+  --padding-start: 0!important;
+  --padding-top: 0!important;
+  contain: size layout !important;
+}
+
+ion-content, ion-page {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.pose {
+  height: 93vh;
+}
+
+ion-fab.controls {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+}

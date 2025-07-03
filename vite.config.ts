@@ -11,6 +11,28 @@ export default defineConfig(({ mode }) => {
   const isSSL = mode === "ssl";
   console.log("Vite mode:", mode, "isSSL:", isSSL, "isMobile:", isMobile);
 
+  const alias = {
+    "@": path.resolve(__dirname, "./src"),
+    "@components": path.resolve(__dirname, "./src/components"),
+    "@exercises": path.resolve(__dirname, "./src/exercises"),
+    "@pages": path.resolve(__dirname, "./src/pages"),
+    "@utils": path.resolve(__dirname, "./src/utils"),
+    "@types": path.resolve(__dirname, "./src/types"),
+    "zustand/react": path.resolve(
+      __dirname,
+      "./node_modules/zustand/vanilla"
+    ), // Prevent React bindings
+  };
+
+  // When not building for mobile, we replace the native plugin definition
+  // with our web-based shim.
+  if (!isMobile) {
+    alias["@/pages/Pose/media-pipe"] = path.resolve(
+      __dirname,
+      "./src/shims/capacitor-media-pipe.ts"
+    );
+  }
+
   return {
     base: isMobile ? "/" : "/",
     plugins: [
@@ -65,26 +87,14 @@ export default defineConfig(({ mode }) => {
       !isMobile && mkcert(),
     ],
     resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-        "@components": path.resolve(__dirname, "./src/components"),
-        "@exercises": path.resolve(__dirname, "./src/exercises"),
-        "@pages": path.resolve(__dirname, "./src/pages"),
-        "@utils": path.resolve(__dirname, "./src/utils"),
-        "@types": path.resolve(__dirname, "./src/types"),
-        "zustand/react": path.resolve(
-          __dirname,
-          "./node_modules/zustand/vanilla"
-        ), // Prevent React bindings
-        "capacitor-media-pipe": path.resolve(__dirname, "../capacitor-media-pipe"),
-      },
+      alias,
     },
     build: {
       outDir: "docs",
       assetsDir: "assets",
       minify: "terser",
       rollupOptions: {
-        external: ["react", "react-dom", "capacitor-media-pipe"], // Exclude React
+        external: ["react", "react-dom"], // Exclude React
       },
     },
     server:
