@@ -40,9 +40,6 @@ const initializeWebCamera = async () => {
 
 const initializeNativeCamera = async () => {
   try {
-    // First ensure camera is stopped
-    await safeStopCamera();
-
     // Try to start with more conservative options
     await CameraPreview.start({
       position: camera.position() === "front" ? "front" : "rear",
@@ -52,7 +49,6 @@ const initializeNativeCamera = async () => {
       height: window.innerHeight,
       x: 0,
       y: 0,
-      toBack: true,
       enableHighResolution: false, // Start with lower res for stability
     });
 

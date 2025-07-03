@@ -78,8 +78,50 @@ define(['./workbox-2b0b8943'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
+    "url": "assets/index-BzFA5BWQ.css",
+    "revision": null
+  }, {
+    "url": "assets/index-D2ne-VSo.js",
+    "revision": null
+  }, {
+    "url": "assets/index-legacy-A02KuBNT.js",
+    "revision": null
+  }, {
+    "url": "assets/polyfills-legacy-D66NnUcz.js",
+    "revision": null
+  }, {
+    "url": "assets/web-AQqu_63p.js",
+    "revision": null
+  }, {
+    "url": "assets/web-BGneKV05.js",
+    "revision": null
+  }, {
+    "url": "assets/web-CVF9sWj0.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-bD8bglE3.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-BqDhUiCQ.js",
+    "revision": null
+  }, {
+    "url": "assets/web-legacy-UX_GnJtl.js",
+    "revision": null
+  }, {
+    "url": "icon.svg",
+    "revision": "dd3ae58ae750898b1e93b139e3a57a64"
+  }, {
+    "url": "index.html",
+    "revision": "d3eab89beabd9b10f1eb297f0a2208fd"
+  }, {
+    "url": "registerSW.js",
+    "revision": "1872c500de691dce40960bb85481de07"
+  }, {
+    "url": "icon.svg",
+    "revision": "dd3ae58ae750898b1e93b139e3a57a64"
+  }, {
     "url": "manifest.webmanifest",
-    "revision": "07ecffc60c07c791db0e4c68c27a43c9"
+    "revision": "243dc99edb9399b5f086befc85235d47"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));

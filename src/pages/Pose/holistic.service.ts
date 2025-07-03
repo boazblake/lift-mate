@@ -1,19 +1,26 @@
 import { holistic, elements } from "./store";
 import { Capacitor } from "@capacitor/core";
-import {
-  PoseLandmarker,
-  FaceLandmarker,
-  HandLandmarker,
-  FilesetResolver,
-} from "@mediapipe/tasks-vision";
+import CapacitorMediaPipe from "./media-pipe";
 
-let CapacitorMediaPipe;
+// This service abstracts the MediaPipe functionality for both web and native platforms.
+// On the web, it uses the JS-based @mediapipe/tasks-vision library.
+// On native, it uses the custom CapacitorMediaPipe plugin.
+// A Vite alias swaps the native plugin for a web shim during web builds.
+
+const platform = Capacitor.getPlatform();
 let poseLandmarker;
 let faceLandmarker;
 let handLandmarker;
-let runningMode = "VIDEO";
 
+// Web-specific initialization
 const createHolisticLandmarker = async () => {
+  const {
+    PoseLandmarker,
+    FaceLandmarker,
+    HandLandmarker,
+    FilesetResolver,
+  } = await import("@mediapipe/tasks-vision");
+
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
   );
@@ -23,7 +30,7 @@ const createHolisticLandmarker = async () => {
       modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
       delegate: "GPU",
     },
-    runningMode,
+    runningMode: "VIDEO",
     numPoses: 1,
   });
 
@@ -32,7 +39,7 @@ const createHolisticLandmarker = async () => {
       modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
       delegate: "GPU",
     },
-    runningMode,
+    runningMode: "VIDEO",
     numFaces: 1,
   });
 
@@ -41,128 +48,97 @@ const createHolisticLandmarker = async () => {
       modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
       delegate: "GPU",
     },
-    runningMode,
+    runningMode: "VIDEO",
     numHands: 2,
   });
-
-  holistic.ready(true);
 };
 
-const initializeWeb = async () => {
-  try {
-    await createHolisticLandmarker();
-  } catch (error) {
-    console.error("MediaPipe initialization failed:", error);
-    holistic.ready(false);
-  }
-};
-
-const initializeNative = async () => {
-  try {
-    const nativeModule = await import("capacitor-media-pipe");
-    CapacitorMediaPipe = nativeModule.CapacitorMediaPipe;
-    await CapacitorMediaPipe.initialize();
-    CapacitorMediaPipe.addListener("holisticResults", (results) => {
-      holistic.data({
-        poseLandmarks: results.poseLandmarks || [],
-        faceLandmarks: results.faceLandmarks || [],
-        leftHandLandmarks: results.leftHandLandmarks || [],
-        rightHandLandmarks: results.rightHandLandmarks || [],
-      });
-    });
-    holistic.ready(true);
-  } catch (error) {
-    console.error("MediaPipe initialization failed:", error);
-    holistic.ready(false);
-  }
-};
-
-const sendFramesWeb = async () => {
+// This function runs on a continuous loop to process video frames.
+const sendFrames = async () => {
   const video = elements.video();
   if (!video || video.paused || video.ended) {
-    requestAnimationFrame(sendFramesWeb);
+    requestAnimationFrame(sendFrames);
     return;
   }
 
   try {
-    const nowInMs = performance.now();
-    const poseResult = poseLandmarker.detectForVideo(video, nowInMs);
-    const faceResult = faceLandmarker.detectForVideo(video, nowInMs);
-    const handResult = handLandmarker.detectForVideo(video, nowInMs);
+    if (platform === "web") {
+      // On the web, we process the frame with the JS library and manually combine the results.
+      const nowInMs = performance.now();
+      const poseResult = poseLandmarker.detectForVideo(video, nowInMs);
+      const faceResult = faceLandmarker.detectForVideo(video, nowInMs);
+      const handResult = handLandmarker.detectForVideo(video, nowInMs);
 
-    console.log("Hand result:", handResult);
+      const currentHolisticData = {
+        poseLandmarks: poseResult.landmarks[0] || [],
+        faceLandmarks: faceResult.faceLandmarks[0] || [],
+        leftHandLandmarks: [],
+        rightHandLandmarks: [],
+      };
 
-    const currentHolisticData = {
-      poseLandmarks: poseResult.landmarks[0] || [],
-      faceLandmarks: faceResult.faceLandmarks[0] || [],
-      leftHandLandmarks: [],
-      rightHandLandmarks: [],
-    };
-
-    if (handResult.landmarks && handResult.handednesses) {
-      handResult.handednesses.forEach((handedness, index) => {
-        if (handedness[0].categoryName === 'Left') {
-          currentHolisticData.leftHandLandmarks.push(...handResult.landmarks[index]);
-        } else if (handedness[0].categoryName === 'Right') {
-          currentHolisticData.rightHandLandmarks.push(...handResult.landmarks[index]);
-        }
-      });
-    }
-    holistic.data(currentHolisticData);
-  } catch (error) {
-    console.error("Error in sendFramesWeb:", error);
-  }
-
-  requestAnimationFrame(sendFramesWeb);
-};
-
-const sendFramesNative = async () => {
-  const video = elements.video();
-  if (!video || video.paused || video.ended) {
-    requestAnimationFrame(sendFramesNative);
-    return;
-  }
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext("2d");
-    if (context) {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
-      await CapacitorMediaPipe.send({ image: imageData });
+      if (handResult.landmarks && handResult.handednesses) {
+        handResult.handednesses.forEach((handedness, index) => {
+          if (handedness[0].categoryName === "Left") {
+            currentHolisticData.leftHandLandmarks.push(
+              ...handResult.landmarks[index]
+            );
+          } else if (handedness[0].categoryName === "Right") {
+            currentHolisticData.rightHandLandmarks.push(
+              ...handResult.landmarks[index]
+            );
+          }
+        });
+      }
+      holistic.data(currentHolisticData);
+    } else {
+      // On native, we send the frame to the native plugin for processing.
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
+        await CapacitorMediaPipe.send({ image: imageData });
+      }
     }
   } catch (error) {
-    console.error("Error sending frame to MediaPipe plugin:", error);
+    console.error("Error in sendFrames:", error);
   }
-  requestAnimationFrame(sendFramesNative);
+
+  requestAnimationFrame(sendFrames);
 };
 
 export const holisticService = {
-  initialize: async () => {
-    const platform = Capacitor.getPlatform();
-    if (platform === "web") {
-      await initializeWeb();
-    } else {
-      await initializeNative();
+  initialize: async (options = {}) => {
+    try {
+      if (platform === "web") {
+        await createHolisticLandmarker();
+      } else {
+        await CapacitorMediaPipe.initialize(options);
+        CapacitorMediaPipe.addListener("holisticResults", (results) => {
+          holistic.data({
+            poseLandmarks: results.poseLandmarks || [],
+            faceLandmarks: results.faceLandmarks || [],
+            leftHandLandmarks: results.leftHandLandmarks || [],
+            rightHandLandmarks: results.rightHandLandmarks || [],
+          });
+        });
+      }
+      holistic.ready(true);
+    } catch (error) {
+      console.error("MediaPipe initialization failed:", error);
+      holistic.ready(false);
     }
   },
 
-  sendFrames: async () => {
-    const platform = Capacitor.getPlatform();
-    if (platform === "web") {
-      await sendFramesWeb();
-    } else {
-      await sendFramesNative();
-    }
-  },
+  sendFrames,
 
   close: async () => {
-    const platform = Capacitor.getPlatform();
     if (platform === "web") {
-      await poseLandmarker.close();
-      await faceLandmarker.close();
-      await handLandmarker.close();
+      if (poseLandmarker) await poseLandmarker.close();
+      if (faceLandmarker) await faceLandmarker.close();
+      if (handLandmarker) await handLandmarker.close();
     } else {
       await CapacitorMediaPipe.close();
     }
@@ -175,3 +151,4 @@ export const holisticService = {
     });
   },
 };
+
