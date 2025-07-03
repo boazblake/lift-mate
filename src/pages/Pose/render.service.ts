@@ -57,12 +57,18 @@ export const renderService = {
       if (holistic.ready()) {
         const data = holistic.data();
         // Function to transform normalized landmark coordinates to canvas pixel coordinates
-        const transformLandmark = (landmark: any) => ({
-          x: offsetX + landmark.x * renderedVideoWidth,
-          y: offsetY + landmark.y * renderedVideoHeight,
-          z: landmark.z, // Keep z-coordinate if present
-          visibility: landmark.visibility, // Keep visibility if present
-        });
+        const transformLandmark = (landmark: any) => {
+          if (typeof landmark.x !== 'number' || typeof landmark.y !== 'number' || isNaN(landmark.x) || isNaN(landmark.y)) {
+            console.warn("Invalid landmark coordinates:", landmark);
+            return { x: NaN, y: NaN, z: landmark.z, visibility: landmark.visibility }; // Return NaN to indicate invalid
+          }
+          return {
+            x: offsetX + landmark.x * renderedVideoWidth,
+            y: offsetY + landmark.y * renderedVideoHeight,
+            z: landmark.z, // Keep z-coordinate if present
+            visibility: landmark.visibility, // Keep visibility if present
+          };
+        };
 
         if (features().pose && data.poseLandmarks?.length) {
           drawLandmarks(
@@ -101,7 +107,7 @@ export const renderService = {
               ctx,
               data.rightHandLandmarks.map(transformLandmark),
               HAND_CONNECTIONS,
-              defaultDrawOptions.hands
+            defaultDrawOptions.hands
             );
           }
         }
@@ -112,8 +118,6 @@ export const renderService = {
             defaultDrawOptions.face
           );
         }
-        console.log("Holistic Data:", data);
-        console.log("Features:", features());
       }
 
       if (recording.active()) {
@@ -133,17 +137,18 @@ function drawLandmarks(
   landmarks: any[],
   options: DrawOptions["pose" | "hands" | "face"]
 ) {
-  console.log("Drawing landmarks:", landmarks, "with options:", options);
-  console.log("Canvas context:", ctx);
   ctx.fillStyle = options.color;
   ctx.strokeStyle = options.color;
   ctx.lineWidth = options.lineWidth;
 
   landmarks.forEach((point) => {
-    console.log("Drawing point:", point.x, point.y);
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, options.radius, 0, 2 * Math.PI);
-    ctx.fill();
+    if (typeof point.x === 'number' && typeof point.y === 'number' && isFinite(point.x) && isFinite(point.y)) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, options.radius, 0, 2 * Math.PI);
+      ctx.fill();
+    } else {
+      console.warn("Skipping drawing point due to invalid coordinates:", point);
+    }
   });
 }
 
