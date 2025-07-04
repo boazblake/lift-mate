@@ -1,5 +1,5 @@
 /node_modules/*
-.direnv
-.cert
-.envrc
-.env
+/.direnv
+/.cert
+/.envrc
+/.env
