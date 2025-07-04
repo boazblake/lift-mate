@@ -175,6 +175,7 @@ const PoseViewer: m.Component = {
                     await cameraService.initialize();
                     await holisticService.initialize();
                     if (camera.ready() && holistic.ready()) {
+                      console.log(holistic);
                       transition("ready");
                       renderService.startLoop();
                       holisticService.sendFrames();
@@ -186,9 +187,7 @@ const PoseViewer: m.Component = {
                   },
                   disabled: isLoading(),
                 },
-                isLoading()
-                  ? m("ion-spinner")
-                  : m("ion-icon", { name: "play" })
+                isLoading() ? m("ion-spinner") : m("ion-icon", { name: "play" })
               ),
             ]
           ),

@@ -14,12 +14,8 @@ let handLandmarker;
 
 // Web-specific initialization
 const createHolisticLandmarker = async () => {
-  const {
-    PoseLandmarker,
-    FaceLandmarker,
-    HandLandmarker,
-    FilesetResolver,
-  } = await import("@mediapipe/tasks-vision");
+  const { PoseLandmarker, FaceLandmarker, HandLandmarker, FilesetResolver } =
+    await import("@mediapipe/tasks-vision");
 
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
@@ -115,13 +111,19 @@ export const holisticService = {
       if (platform === "web") {
         await createHolisticLandmarker();
       } else {
-        await CapacitorMediaPipe.initialize(options);
+        console.log("here mf", options);
+        await CapacitorMediaPipe.initialize({
+          modelComplexity: options.modelComplexity || 'full',
+          smoothLandmarks: options.smoothLandmarks || true,
+          minDetectionConfidence: options.minDetectionConfidence || 0.5,
+          minTrackingConfidence: options.minTrackingConfidence || 0.5,
+        });
         CapacitorMediaPipe.addListener("holisticResults", (results) => {
           holistic.data({
             poseLandmarks: results.poseLandmarks || [],
-            faceLandmarks: results.faceLandmarks || [],
-            leftHandLandmarks: results.leftHandLandmarks || [],
-            rightHandLandmarks: results.rightHandLandmarks || [],
+            faceLandmarks: [],
+            leftHandLandmarks: [],
+            rightHandLandmarks: [],
           });
         });
       }
@@ -151,4 +153,3 @@ export const holisticService = {
     });
   },
 };
-
