@@ -8,18 +8,17 @@ const config: CapacitorConfig = {
   webDir: "docs",
   server: isDev
     ? {
-        url: "http://localhost:8101",
+        url: "http://localhost:8101", // Matches Vite's server.port
         cleartext: true,
       }
     : {},
   ios: {
-    minVersion: 18,
+    minVersion: "13.0", // Matches plugin's deployment target
     webContentsDebuggingEnabled: true,
     NSCameraUsageDescription:
       "This app uses the camera for real-time pose estimation to track your workouts.",
     NSMicrophoneUsageDescription:
       "This app may use the microphone for video recording during workouts.",
-    WKWebViewOnly: true,
   },
 };
 

@@ -49,7 +49,8 @@ const initializeNativeCamera = async () => {
       height: window.innerHeight,
       x: 0,
       y: 0,
-      enableHighResolution: false, // Start with lower res for stability
+      toBack: true,
+      enableHighResolution: true, // Start with lower res for stability
     });
 
     camera.ready(true);

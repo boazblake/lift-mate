@@ -18,7 +18,6 @@ export default defineConfig(({ mode }) => {
     "@pages": path.resolve(__dirname, "./src/pages"),
     "@utils": path.resolve(__dirname, "./src/utils"),
     "@types": path.resolve(__dirname, "./src/types"),
-    "zustand/react": path.resolve(__dirname, "./node_modules/zustand/vanilla"), // Prevent React bindings
   };
 
   // When not building for mobile, we replace the native plugin definition

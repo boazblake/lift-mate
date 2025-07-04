@@ -2,7 +2,12 @@ import { registerPlugin, PluginListenerHandle } from "@capacitor/core";
 
 // Define the TypeScript interface for our native plugin
 export interface CapacitorMediaPipePlugin {
-  initialize(options: any): Promise<void>;
+  initialize(options: {
+    modelComplexity?: 'full' | 'lite';
+    smoothLandmarks?: boolean;
+    minDetectionConfidence?: number;
+    minTrackingConfidence?: number;
+  }): Promise<void>;
   send(options: { image: string }): Promise<void>;
   close(): Promise<void>;
   addListener(

@@ -15,6 +15,9 @@ PODS:
     - Capacitor
   - CapacitorKeyboard (7.0.1):
     - Capacitor
+  - CapacitorMediaPipe (0.0.1):
+    - Capacitor
+    - MediaPipeTasksVision (= 0.10.21)
   - CapacitorShare (7.0.1):
     - Capacitor
   - CapacitorSplashScreen (7.0.1):
@@ -22,6 +25,9 @@ PODS:
   - CapacitorStatusBar (7.0.1):
     - Capacitor
   - IONFilesystemLib (1.0.0)
+  - MediaPipeTasksCommon (0.10.21)
+  - MediaPipeTasksVision (0.10.21):
+    - MediaPipeTasksCommon (= 0.10.21)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -32,13 +38,16 @@ DEPENDENCIES:
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
+  - CapacitorMediaPipe (from `./Plugins/CapacitorMediaPipe/`)
   - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
 
 SPEC REPOS:
-  trunk:
+  https://github.com/CocoaPods/Specs.git:
     - IONFilesystemLib
+    - MediaPipeTasksCommon
+    - MediaPipeTasksVision
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -57,6 +66,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/haptics"
   CapacitorKeyboard:
     :path: "../../node_modules/@capacitor/keyboard"
+  CapacitorMediaPipe:
+    :path: "./Plugins/CapacitorMediaPipe/"
   CapacitorShare:
     :path: "../../node_modules/@capacitor/share"
   CapacitorSplashScreen:
@@ -73,11 +84,14 @@ SPEC CHECKSUMS:
   CapacitorFilesystem: 3acaa1d2b909a9dd904581a86f21782886e6bb38
   CapacitorHaptics: 70e47470fa1a6bd6338cd102552e3846b7f9a1b3
   CapacitorKeyboard: 969647d0ca2e5c737d7300088e2517aa832434e2
+  CapacitorMediaPipe: a7cad214faf128676b953a875f9aa1ac0d5853e4
   CapacitorShare: 58d6c2da63b093e8693287b2d36db92435538435
   CapacitorSplashScreen: 19cd3573e57507e02d6f34597a8c421e00931487
   CapacitorStatusBar: 275cbf2f4dfc00388f519ef80c7ec22edda342c9
   IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
+  MediaPipeTasksCommon: 6cfa29170d4900f04d250ad95ec058f14a741f38
+  MediaPipeTasksVision: 7b1c0f5a5820e87e9d96926f5e65d8cd3744fac2
 
-PODFILE CHECKSUM: b19157e4a7e8fa378ce52806738e6cfa9f746e86
+PODFILE CHECKSUM: 21b1843507b71cb88d21f33031bbbe7b762d13ad
 
 COCOAPODS: 1.15.2
