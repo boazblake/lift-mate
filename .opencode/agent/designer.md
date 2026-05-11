@@ -1,7 +1,6 @@
 ---
 description: Designs UI/UX mockups and specs for the Lift-Mate fitness app. Use when the user asks for design, mockups, UI, layout, screens, or visual planning. Creates interactive HTML/CSS prototypes and component specs.
 mode: subagent
-model: anthropic/claude-sonnet-4-6
 permission:
   read: allow
   edit: allow
