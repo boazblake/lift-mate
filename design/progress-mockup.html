@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lift-Mate — Progress Mockup</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/ionic.bundle.css">
+  <style>
+    @import "https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/palettes/dark.always.css";
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: var(--ion-background-color, #1c1c2e);
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow: 0 0 0 12px #2d2d44, 0 0 0 14px #444, 0 20px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 30px;
+      background: #2d2d44;
+      border-radius: 0 0 18px 18px;
+      z-index: 100;
+    }
+
+    @media (max-width: 420px) {
+      body { align-items: stretch; background: var(--ion-background-color); }
+      .phone-frame {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .phone-notch { display: none; }
+      .state-toggles { display: none !important; }
+    }
+
+    .content-area {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--ion-background-color, #1c1c2e);
+    }
+
+    /* Page header */
+    .page-header {
+      padding: 20px 20px 16px;
+      background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -15%;
+      width: 240px;
+      height: 240px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      position: relative;
+      z-index: 1;
+    }
+    .page-header p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Pull-to-refresh hint */
+    .refresh-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 0 4px;
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+    .refresh-hint ion-icon {
+      font-size: 16px;
+    }
+
+    /* Stats summary cards */
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      padding: 12px 20px 8px;
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--ion-color-step-50, #2a2a40);
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--ion-text-color, #e8e8f0);
+      line-height: 1.2;
+    }
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: var(--ion-color-medium, #8e8e93);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .stat-card .stat-icon {
+      font-size: 20px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .stat-card.highlight {
+      background: linear-gradient(135deg, rgba(108,92,231,0.2), rgba(162,155,254,0.15));
+      border: 1px solid rgba(108,92,231,0.3);
+    }
+
+    /* Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 8px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ion-text-color, #e8e8f0);
+    }
+    .section-action {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6c5ce7;
+      cursor: pointer;
+    }
+
+    /* Bar Chart — Exercise Frequency */
+    .chart-container {
+      padding: 0 20px 8px;
+    }
+    .chart-card {
+      background: var(--ion-color-step-50, #2a2a40);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ion-text-color, #e8e8f0);
+      margin-bottom: 14px;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .bar-row:last-child { margin-bottom: 0; }
+    .bar-label {
+      width: 70px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ion-color-medium, #8e8e93);
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .bar-track {
+      flex: 1;
+      height: 24px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 12px;
+      transition: width 0.6s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      min-width: 30px;
+    }
+    .bar-fill.purple { background: linear-gradient(90deg, #6c5ce7, #a29bfe); }
+    .bar-fill.green { background: linear-gradient(90deg, #00b894, #55efc4); }
+    .bar-fill.orange { background: linear-gradient(90deg, #e17055, #fdcb6e); }
+    .bar-fill.blue { background: linear-gradient(90deg, #0984e3, #74b9ff); }
+    .bar-fill.pink { background: linear-gradient(90deg, #e84393, #fd79a8); }
+
+    /* Recent activity timeline */
+    .timeline-container {
+      padding: 0 20px 8px;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      padding-bottom: 16px;
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255,255,255,0.08);
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .timeline-dot.chest { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+    .timeline-dot.arms { background: rgba(162,155,254,0.2); color: #a29bfe; }
+    .timeline-dot.legs { background: rgba(253,203,110,0.2); color: #fdcb6e; }
+    .timeline-dot.full { background: rgba(0,206,201,0.2); color: #00cec9; }
+    .timeline-dot ion-icon { font-size: 16px; }
+    .timeline-info { flex: 1; min-width: 0; }
+    .timeline-info .tl-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ion-text-color, #e8e8f0);
+    }
+    .timeline-info .tl-meta {
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .timeline-info .tl-meta span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .timeline-info .tl-meta ion-icon { font-size: 12px; }
+
+    /* Achievements section */
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 0 20px 100px;
+    }
+    .achievement-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 6px;
+      border-radius: 14px;
+      background: var(--ion-color-step-50, #2a2a40);
+      text-align: center;
+    }
+    .achievement-item .ach-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .achievement-item .ach-icon.earned {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+    }
+    .achievement-item .ach-icon.locked {
+      background: rgba(255,255,255,0.06);
+      color: var(--ion-color-medium, #555);
+      filter: grayscale(1);
+    }
+    .achievement-item .ach-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ion-text-color, #e8e8f0);
+      line-height: 1.2;
+    }
+    .achievement-item .ach-status {
+      font-size: 10px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px 100px;
+      text-align: center;
+    }
+    .empty-state.visible { display: flex; }
+    .empty-state.visible ~ .stats-row { display: none; }
+    .empty-state.visible ~ .section-header { display: none; }
+    .empty-state.visible ~ .chart-container { display: none; }
+    .empty-state.visible ~ .timeline-container { display: none; }
+    .empty-state.visible ~ .achievements-grid { display: none; }
+
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--ion-color-step-50, #2a2a40);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .empty-state-icon ion-icon { font-size: 48px; color: var(--ion-color-medium, #8e8e93); }
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ion-text-color, #e8e8f0);
+      margin-bottom: 6px;
+    }
+    .empty-state p {
+      font-size: 15px;
+      color: var(--ion-color-medium, #8e8e93);
+      line-height: 1.5;
+      max-width: 280px;
+      margin-bottom: 24px;
+    }
+
+    /* State toggles */
+    .state-toggles {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 300;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 24px;
+    }
+    .state-toggles button {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .state-toggles button.active {
+      background: #6c5ce7;
+      color: #fff;
+    }
+    .state-toggles button:not(.active) {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6);
+    }
+    .state-toggles button:not(.active):hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .state-toggles + .phone-frame { margin-top: 70px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="content-area" id="contentArea">
+        <!-- Page Header -->
+        <div class="page-header">
+          <h1>Your Progress</h1>
+          <p>Track your gains over time</p>
+        </div>
+
+        <!-- Pull-to-refresh hint -->
+        <div class="refresh-hint">
+          <ion-icon name="arrow-down-outline"></ion-icon>
+          <span>Pull down to refresh</span>
+        </div>
+
+        <!-- Normal State -->
+        <div id="normalState">
+          <!-- Stats summary cards -->
+          <div class="stats-row">
+            <div class="stat-card highlight">
+              <div class="stat-value">24</div>
+              <div class="stat-label">Workouts</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">386</div>
+              <div class="stat-label">Total Reps</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">8</div>
+              <div class="stat-label">Day Streak</div>
+            </div>
+          </div>
+
+          <!-- Exercise Frequency Chart -->
+          <div class="section-header">
+            <span class="section-title">Exercise Frequency</span>
+            <span class="section-action">This week</span>
+          </div>
+          <div class="chart-container">
+            <div class="chart-card">
+              <div class="chart-title">Sets completed this week</div>
+              <div class="bar-row">
+                <span class="bar-label">Squat</span>
+                <div class="bar-track">
+                  <div class="bar-fill purple" style="width: 85%;">12</div>
+                </div>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label">Bench Press</span>
+                <div class="bar-track">
+                  <div class="bar-fill green" style="width: 70%;">9</div>
+                </div>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label">OH Press</span>
+                <div class="bar-track">
+                  <div class="bar-fill orange" style="width: 50%;">6</div>
+                </div>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label">Push-up</span>
+                <div class="bar-track">
+                  <div class="bar-fill blue" style="width: 35%;">4</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="section-header">
+            <span class="section-title">Recent Activity</span>
+            <span class="section-action">See all</span>
+          </div>
+          <div class="timeline-container">
+            <div class="timeline-item">
+              <div class="timeline-dot chest">
+                <ion-icon name="barbell"></ion-icon>
+              </div>
+              <div class="timeline-info">
+                <div class="tl-name">Chest Day</div>
+                <div class="tl-meta">
+                  <span><ion-icon name="time-outline"></ion-icon> Today, 2:30 PM</span>
+                  <span><ion-icon name="repeat-outline"></ion-icon> 36 reps</span>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot legs">
+                <ion-icon name="footsteps"></ion-icon>
+              </div>
+              <div class="timeline-info">
+                <div class="tl-name">Leg Day</div>
+                <div class="tl-meta">
+                  <span><ion-icon name="time-outline"></ion-icon> Yesterday, 6:00 PM</span>
+                  <span><ion-icon name="repeat-outline"></ion-icon> 48 reps</span>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot arms">
+                <ion-icon name="dumbbell"></ion-icon>
+              </div>
+              <div class="timeline-info">
+                <div class="tl-name">Arms &amp; Shoulders</div>
+                <div class="tl-meta">
+                  <span><ion-icon name="time-outline"></ion-icon> 3 days ago</span>
+                  <span><ion-icon name="repeat-outline"></ion-icon> 42 reps</span>
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot full">
+                <ion-icon name="git-network-outline"></ion-icon>
+              </div>
+              <div class="timeline-info">
+                <div class="tl-name">Push Pull</div>
+                <div class="tl-meta">
+                  <span><ion-icon name="time-outline"></ion-icon> 5 days ago</span>
+                  <span><ion-icon name="repeat-outline"></ion-icon> 55 reps</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achievements -->
+          <div class="section-header">
+            <span class="section-title">Achievements</span>
+            <span class="section-action">2 of 12</span>
+          </div>
+          <div class="achievements-grid">
+            <div class="achievement-item">
+              <div class="ach-icon earned">
+                <ion-icon name="trophy"></ion-icon>
+              </div>
+              <div class="ach-name">First Rep</div>
+              <div class="ach-status">Earned</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon earned">
+                <ion-icon name="flame"></ion-icon>
+              </div>
+              <div class="ach-name">Week Streak</div>
+              <div class="ach-status">Earned</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="barbell-outline"></ion-icon>
+              </div>
+              <div class="ach-name">100 Reps</div>
+              <div class="ach-status">86 / 100</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </div>
+              <div class="ach-name">Month Streak</div>
+              <div class="ach-status">Locked</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="rocket-outline"></ion-icon>
+              </div>
+              <div class="ach-name">10 Workouts</div>
+              <div class="ach-status">Locked</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="star-outline"></ion-icon>
+              </div>
+              <div class="ach-name">Perfect Form</div>
+              <div class="ach-status">Locked</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="trending-up-outline"></ion-icon>
+              </div>
+              <div class="ach-name">New PR</div>
+              <div class="ach-status">Locked</div>
+            </div>
+            <div class="achievement-item">
+              <div class="ach-icon locked">
+                <ion-icon name="timer-outline"></ion-icon>
+              </div>
+              <div class="ach-name">Speed Demon</div>
+              <div class="ach-status">Locked</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">
+            <ion-icon name="stats-chart-outline"></ion-icon>
+          </div>
+          <h2>No data yet</h2>
+          <p>Start your first workout to see progress. Track your reps, form scores, and achievements here.</p>
+          <ion-button expand="block" style="max-width: 260px; --background: #6c5ce7; --border-radius: 12px; font-weight: 600; height: 50px;" onclick="alert('Navigate to Exercise tab')">
+            <ion-icon name="barbell-outline" slot="start"></ion-icon>
+            Start Workout
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- State toggles -->
+    <div class="state-toggles">
+      <button class="active" onclick="setState('normal')">Normal</button>
+      <button onclick="setState('empty')">Empty</button>
+    </div>
+  </div>
+
+  <script>
+    function setState(state) {
+      const normal = document.getElementById('normalState');
+      const empty = document.getElementById('emptyState');
+
+      normal.style.display = '';
+      empty.classList.remove('visible');
+
+      if (state === 'empty') {
+        normal.style.display = 'none';
+        empty.classList.add('visible');
+      }
+
+      document.querySelectorAll('.state-toggles button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

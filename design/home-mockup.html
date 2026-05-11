@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lift-Mate — Home Mockup</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/ionic.bundle.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    /* Phone frame */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: #fff;
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow: 0 0 0 12px #2d2d44, 0 0 0 14px #444, 0 20px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 30px;
+      background: #2d2d44;
+      border-radius: 0 0 18px 18px;
+      z-index: 100;
+    }
+
+    @media (max-width: 420px) {
+      body { align-items: stretch; background: #fff; }
+      .phone-frame {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .phone-notch { display: none; }
+      .state-toggles { display: none !important; }
+    }
+
+    /* Scrollable content area */
+    .content-area {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--ion-background-color, #fff);
+    }
+
+    /* Hero / greeting */
+    .greeting-section {
+      padding: 20px 20px 12px;
+      background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #6c5ce7 100%);
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .greeting-section::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      right: -20%;
+      width: 280px;
+      height: 280px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .greeting-section::after {
+      content: '';
+      position: absolute;
+      bottom: -40%;
+      left: -10%;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+    }
+    .greeting-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      z-index: 1;
+    }
+    .greeting-text { line-height: 1.3; }
+    .greeting-sub {
+      font-size: 14px;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+    .greeting-name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .streak-badge {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(4px);
+      border-radius: 20px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      position: relative;
+      z-index: 1;
+    }
+    .streak-badge ion-icon {
+      font-size: 18px;
+      --ion-color-base: #ffd93d;
+    }
+
+    .greeting-stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .greeting-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .greeting-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .greeting-stat-label {
+      font-size: 12px;
+      opacity: 0.75;
+      font-weight: 500;
+    }
+
+    /* Quick-start card */
+    .quickstart-section {
+      padding: 16px 20px 8px;
+    }
+    .quickstart-card {
+      background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .quickstart-card:active {
+      transform: scale(0.98);
+    }
+    .quickstart-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .quickstart-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .quickstart-icon ion-icon {
+      font-size: 26px;
+      color: #fff;
+    }
+    .quickstart-info h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .quickstart-info p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+    .quickstart-arrow {
+      color: rgba(255,255,255,0.5);
+      font-size: 22px;
+    }
+
+    /* Section header */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 8px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ion-text-color, #1a1a2e);
+    }
+    .section-action {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6c5ce7;
+      cursor: pointer;
+    }
+
+    /* Recent Activity */
+    .recent-scroll {
+      display: flex;
+      gap: 12px;
+      padding: 0 20px 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .recent-scroll::-webkit-scrollbar { display: none; }
+    .recent-card {
+      flex: 0 0 140px;
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--ion-color-light, #f4f4f9);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .recent-card:active { transform: scale(0.96); }
+    .recent-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #6c5ce7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .recent-card-icon ion-icon { font-size: 20px; color: #fff; }
+    .recent-card-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ion-text-color, #1a1a2e);
+      margin-bottom: 2px;
+    }
+    .recent-card-meta {
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+
+    /* Workout list */
+    .workout-list {
+      padding: 0 20px 100px;
+    }
+    .workout-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: var(--ion-color-light, #f8f8fc);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .workout-item:active { transform: scale(0.98); }
+    .workout-item-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .workout-item-icon.chest { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+    .workout-item-icon.arms { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+    .workout-item-icon.legs { background: linear-gradient(135deg, #fdcb6e, #e17055); }
+    .workout-item-icon.full { background: linear-gradient(135deg, #00cec9, #0984e3); }
+    .workout-item-icon.back { background: linear-gradient(135deg, #55efc4, #00b894); }
+    .workout-item-icon ion-icon { font-size: 22px; color: #fff; }
+    .workout-item-info { flex: 1; min-width: 0; }
+    .workout-item-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ion-text-color, #1a1a2e);
+      margin-bottom: 2px;
+    }
+    .workout-item-detail {
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+    .workout-item-chevron {
+      color: var(--ion-color-medium-shade, #b0b0b5);
+      font-size: 18px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 100px;
+      text-align: center;
+    }
+    .empty-state-visible { display: flex; }
+    .empty-state-visible ~ .workout-list { display: none; }
+    .empty-state-visible ~ .section-header { display: none; }
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--ion-color-light, #f4f4f9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .empty-state-icon ion-icon { font-size: 48px; color: var(--ion-color-medium, #8e8e93); }
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ion-text-color, #1a1a2e);
+      margin-bottom: 6px;
+    }
+    .empty-state p {
+      font-size: 15px;
+      color: var(--ion-color-medium, #8e8e93);
+      line-height: 1.5;
+      max-width: 280px;
+      margin-bottom: 24px;
+    }
+
+    /* Loading skeleton */
+    .loading-state {
+      display: none;
+      padding: 0 20px 100px;
+    }
+    .loading-state-visible { display: block; }
+    .loading-state-visible ~ .empty-state { display: none; }
+    .loading-state-visible ~ .section-header { display: none; }
+    .loading-state-visible ~ .workout-list { display: none; }
+
+    .skeleton-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: var(--ion-color-light, #f8f8fc);
+      border-radius: 14px;
+    }
+    .skeleton-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      flex-shrink: 0;
+    }
+    .skeleton-lines { flex: 1; }
+    .skeleton-line {
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      margin-bottom: 6px;
+    }
+    .skeleton-line:last-child { width: 60%; margin-bottom: 0; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* FAB */
+    ion-fab-button::part(native) {
+      box-shadow: 0 4px 16px rgba(108,92,231,0.4);
+    }
+
+    /* Add Workout Modal */
+    .modal-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay-open { display: block; }
+    .modal-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+      animation: slideUp 0.3s ease;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--ion-color-medium-shade, #c8c8cc);
+      margin: 0 auto 16px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #1a1a2e;
+    }
+    .modal-field {
+      margin-bottom: 16px;
+    }
+    .modal-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ion-color-medium, #8e8e93);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e8e8ed;
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .modal-input:focus { border-color: #6c5ce7; }
+
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .icon-option {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background: var(--ion-color-light, #f4f4f9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .icon-option.selected {
+      border-color: #6c5ce7;
+      background: rgba(108,92,231,0.1);
+    }
+    .icon-option ion-icon {
+      font-size: 24px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+    .icon-option.selected ion-icon { color: #6c5ce7; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* State toggles (dev tool) */
+    .state-toggles {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 300;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 24px;
+    }
+    .state-toggles button {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .state-toggles button.active {
+      background: #6c5ce7;
+      color: #fff;
+    }
+    .state-toggles button:not(.active) {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7);
+    }
+    .state-toggles button:not(.active):hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    .state-toggles + .phone-frame { margin-top: 60px; }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      body { background: #0d0d1a; }
+      .phone-frame { background: #1c1c2e; }
+      .content-area { background: #1c1c2e; }
+      .recent-card { background: #2a2a40; }
+      .workout-item { background: #2a2a40; }
+      .workout-item-name { color: #e8e8f0; }
+      .section-title { color: #e8e8f0; }
+      .empty-state h2 { color: #e8e8f0; }
+      .empty-state-icon { background: #2a2a40; }
+      .skeleton-card { background: #2a2a40; }
+      .skeleton-icon { background: linear-gradient(90deg, #3a3a50 25%, #4a4a60 50%, #3a3a50 75%); background-size: 200% 100%; }
+      .skeleton-line { background: linear-gradient(90deg, #3a3a50 25%, #4a4a60 50%, #3a3a50 75%); background-size: 200% 100%; }
+      .modal-sheet { background: #1c1c2e; }
+      .modal-title { color: #e8e8f0; }
+      .modal-input { background: #2a2a40; border-color: #3a3a50; color: #e8e8f0; }
+      .icon-option { background: #2a2a40; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="content-area" id="contentArea">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+          <div style="padding: 20px 20px 12px;">
+            <div class="skeleton-line" style="width: 120px; height: 14px; margin-bottom: 8px;"></div>
+            <div class="skeleton-line" style="width: 200px; height: 24px; margin-bottom: 16px;"></div>
+            <div class="skeleton-line" style="width: 160px; height: 14px;"></div>
+          </div>
+          <div style="padding: 16px 20px 8px;">
+            <div style="height: 80px; border-radius: 16px; background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;"></div>
+          </div>
+          <div style="padding: 16px 20px 8px;">
+            <div class="skeleton-line" style="width: 100px; height: 16px; margin-bottom: 12px;"></div>
+            <div style="display: flex; gap: 12px;">
+              <div style="flex: 0 0 140px; height: 90px; border-radius: 14px; background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;"></div>
+              <div style="flex: 0 0 140px; height: 90px; border-radius: 14px; background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;"></div>
+            </div>
+          </div>
+          <div style="padding: 16px 20px 8px;">
+            <div class="skeleton-line" style="width: 100px; height: 16px; margin-bottom: 12px;"></div>
+            <div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+            <div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+            <div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">
+            <ion-icon name="barbell-outline"></ion-icon>
+          </div>
+          <h2>No workouts yet</h2>
+          <p>Create your first workout and start tracking your lifts with real-time form analysis.</p>
+          <ion-button expand="block" style="max-width: 260px; --background: #6c5ce7; --border-radius: 12px; font-weight: 600; height: 50px;">
+            <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+            Create Workout
+          </ion-button>
+        </div>
+
+        <!-- Normal State -->
+        <div id="normalState">
+          <!-- Greeting -->
+          <div class="greeting-section">
+            <div class="greeting-top">
+              <div class="greeting-text">
+                <div class="greeting-sub" id="greetingTime">Good morning</div>
+                <div class="greeting-name">Alex</div>
+              </div>
+              <div class="streak-badge">
+                <ion-icon name="flame"></ion-icon>
+                <span>8-day streak</span>
+              </div>
+            </div>
+            <div class="greeting-stats">
+              <div class="greeting-stat">
+                <span class="greeting-stat-value">4</span>
+                <span class="greeting-stat-label">This week</span>
+              </div>
+              <div class="greeting-stat">
+                <span class="greeting-stat-value">8h 15m</span>
+                <span class="greeting-stat-label">Total time</span>
+              </div>
+              <div class="greeting-stat">
+                <span class="greeting-stat-value">386</span>
+                <span class="greeting-stat-label">Total reps</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Start -->
+          <div class="quickstart-section">
+            <div class="quickstart-card" onclick="startWorkout()">
+              <div class="quickstart-left">
+                <div class="quickstart-icon">
+                  <ion-icon name="play-circle"></ion-icon>
+                </div>
+                <div class="quickstart-info">
+                  <h3>Start Workout</h3>
+                  <p>Begin an empty workout session</p>
+                </div>
+              </div>
+              <ion-icon name="chevron-forward" class="quickstart-arrow"></ion-icon>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="section-header">
+            <span class="section-title">Recent Activity</span>
+            <span class="section-action">See all</span>
+          </div>
+          <div class="recent-scroll">
+            <div class="recent-card" onclick="alert('Open Chest Day history')">
+              <div class="recent-card-icon" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24);">
+                <ion-icon name="barbell"></ion-icon>
+              </div>
+              <div class="recent-card-name">Chest Day</div>
+              <div class="recent-card-meta">2 days ago</div>
+            </div>
+            <div class="recent-card" onclick="alert('Open Leg Day history')">
+              <div class="recent-card-icon" style="background: linear-gradient(135deg, #fdcb6e, #e17055);">
+                <ion-icon name="footsteps"></ion-icon>
+              </div>
+              <div class="recent-card-name">Leg Day</div>
+              <div class="recent-card-meta">4 days ago</div>
+            </div>
+            <div class="recent-card" onclick="alert('Open Arms history')">
+              <div class="recent-card-icon" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7);">
+                <ion-icon name="dumbbell"></ion-icon>
+              </div>
+              <div class="recent-card-name">Arms &amp; Sh.</div>
+              <div class="recent-card-meta">6 days ago</div>
+            </div>
+            <div class="recent-card" onclick="alert('Open Push Pull history')">
+              <div class="recent-card-icon" style="background: linear-gradient(135deg, #55efc4, #00b894);">
+                <ion-icon name="git-network-outline"></ion-icon>
+              </div>
+              <div class="recent-card-name">Push Pull</div>
+              <div class="recent-card-meta">1 week ago</div>
+            </div>
+          </div>
+
+          <!-- My Workouts -->
+          <div class="section-header">
+            <span class="section-title">My Workouts</span>
+            <span class="section-action" onclick="openAddWorkout()">+ Add</span>
+          </div>
+          <div class="workout-list">
+            <div class="workout-item" onclick="alert('Open Chest Day')">
+              <div class="workout-item-icon chest">
+                <ion-icon name="barbell"></ion-icon>
+              </div>
+              <div class="workout-item-info">
+                <div class="workout-item-name">Chest Day</div>
+                <div class="workout-item-detail">6 exercises · Bench, Incline, Flys</div>
+              </div>
+              <ion-icon name="chevron-forward" class="workout-item-chevron"></ion-icon>
+            </div>
+
+            <div class="workout-item" onclick="alert('Open Arms and Shoulders')">
+              <div class="workout-item-icon arms">
+                <ion-icon name="dumbbell"></ion-icon>
+              </div>
+              <div class="workout-item-info">
+                <div class="workout-item-name">Arms &amp; Shoulders</div>
+                <div class="workout-item-detail">5 exercises · Curls, Triceps, Press</div>
+              </div>
+              <ion-icon name="chevron-forward" class="workout-item-chevron"></ion-icon>
+            </div>
+
+            <div class="workout-item" onclick="alert('Open Leg Day')">
+              <div class="workout-item-icon legs">
+                <ion-icon name="footsteps"></ion-icon>
+              </div>
+              <div class="workout-item-info">
+                <div class="workout-item-name">Leg Day</div>
+                <div class="workout-item-detail">4 exercises · Squat, RDL, Lunges</div>
+              </div>
+              <ion-icon name="chevron-forward" class="workout-item-chevron"></ion-icon>
+            </div>
+
+            <div class="workout-item" onclick="alert('Open Push Pull')">
+              <div class="workout-item-icon full">
+                <ion-icon name="git-network-outline"></ion-icon>
+              </div>
+              <div class="workout-item-info">
+                <div class="workout-item-name">Push Pull</div>
+                <div class="workout-item-detail">5 exercises · Rows, OHP, Face Pulls</div>
+              </div>
+              <ion-icon name="chevron-forward" class="workout-item-chevron"></ion-icon>
+            </div>
+
+            <div class="workout-item" onclick="alert('Open Back & Core')">
+              <div class="workout-item-icon back">
+                <ion-icon name="body-outline"></ion-icon>
+              </div>
+              <div class="workout-item-info">
+                <div class="workout-item-name">Back &amp; Core</div>
+                <div class="workout-item-detail">4 exercises · Pull-ups, Planks, Rows</div>
+              </div>
+              <ion-icon name="chevron-forward" class="workout-item-chevron"></ion-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAB -->
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="margin-bottom: 16px; margin-right: 16px;">
+        <ion-fab-button onclick="openAddWorkout()" style="--background: #6c5ce7; --background-activated: #5a4bd1;">
+          <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+
+      <!-- Add Workout Modal -->
+      <div class="modal-overlay" id="addWorkoutModal" onclick="closeAddWorkout(event)">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div class="modal-title">New Workout</div>
+
+          <div class="modal-field">
+            <div class="modal-label">Workout Name</div>
+            <input class="modal-input" type="text" placeholder="e.g. Push Day" id="workoutNameInput">
+          </div>
+
+          <div class="modal-field">
+            <div class="modal-label">Icon</div>
+            <div class="icon-grid">
+              <div class="icon-option selected" onclick="selectIcon(this)" data-icon="barbell">
+                <ion-icon name="barbell"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="dumbbell">
+                <ion-icon name="dumbbell"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="footsteps">
+                <ion-icon name="footsteps"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="body-outline">
+                <ion-icon name="body-outline"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="git-network-outline">
+                <ion-icon name="git-network-outline"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="fitness-outline">
+                <ion-icon name="fitness-outline"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="trending-up-outline">
+                <ion-icon name="trending-up-outline"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="flame">
+                <ion-icon name="flame"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="heart-outline">
+                <ion-icon name="heart-outline"></ion-icon>
+              </div>
+              <div class="icon-option" onclick="selectIcon(this)" data-icon="star-outline">
+                <ion-icon name="star-outline"></ion-icon>
+              </div>
+            </div>
+          </div>
+
+          <ion-button expand="block" style="margin-top: 8px; --background: #6c5ce7; --border-radius: 12px; font-weight: 600; height: 50px;" onclick="createWorkout()">
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+            Create Workout
+          </ion-button>
+          <ion-button expand="block" fill="clear" style="margin-top: 4px; --color: var(--ion-color-medium);" onclick="closeAddWorkout()">
+            Cancel
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- State toggles -->
+    <div class="state-toggles">
+      <button class="active" onclick="setState('normal')">Normal</button>
+      <button onclick="setState('loading')">Loading</button>
+      <button onclick="setState('empty')">Empty</button>
+    </div>
+  </div>
+
+  <script>
+    function setState(state) {
+      const loading = document.getElementById('loadingState');
+      const empty = document.getElementById('emptyState');
+      const normal = document.getElementById('normalState');
+
+      loading.classList.remove('loading-state-visible');
+      empty.classList.remove('empty-state-visible');
+      normal.style.display = '';
+
+      if (state === 'loading') {
+        loading.classList.add('loading-state-visible');
+      } else if (state === 'empty') {
+        empty.classList.add('empty-state-visible');
+      }
+
+      document.querySelectorAll('.state-toggles button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function openAddWorkout() {
+      document.getElementById('addWorkoutModal').classList.add('modal-overlay-open');
+      document.getElementById('workoutNameInput').value = '';
+      document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+      document.querySelector('.icon-option').classList.add('selected');
+    }
+
+    function closeAddWorkout(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('addWorkoutModal').classList.remove('modal-overlay-open');
+    }
+
+    let selectedIcon = 'barbell';
+    function selectIcon(el) {
+      document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedIcon = el.dataset.icon;
+    }
+
+    function createWorkout() {
+      const name = document.getElementById('workoutNameInput').value.trim();
+      if (!name) {
+        document.getElementById('workoutNameInput').focus();
+        document.getElementById('workoutNameInput').style.borderColor = '#ff6b6b';
+        setTimeout(() => document.getElementById('workoutNameInput').style.borderColor = '', 1500);
+        return;
+      }
+      alert(`Workout "${name}" created! (icon: ${selectedIcon})`);
+      closeAddWorkout();
+    }
+
+    function startWorkout() {
+      alert('Starting workout session...');
+    }
+
+    // Time-based greeting
+    const hour = new Date().getHours();
+    let greeting = 'Good evening';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 17) greeting = 'Good afternoon';
+    document.getElementById('greetingTime').textContent = greeting;
+  </script>
+</body>
+</html>
