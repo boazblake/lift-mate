@@ -51,6 +51,12 @@ let exerciseQuery = "";
 let isStartingSession = false;
 let shouldAutoStart = false;
 
+const readEventValue = (e: any): string => {
+  if (typeof e?.detail?.value === "string") return e.detail.value;
+  if (typeof e?.target?.value === "string") return e.target.value;
+  return "";
+};
+
 const startSession = async () => {
   const hasExercise = Boolean(exercise()?.meta?.name);
   if (!hasExercise || isLoading() || isStartingSession) return;
@@ -138,8 +144,11 @@ const PoseViewer: m.Component = {
               value: exerciseQuery,
               debounce: 80,
               placeholder: "Search 800+ exercises",
-              onIonInput: (e: { detail?: { value?: string } }) => {
-                exerciseQuery = e.detail?.value || "";
+              onioninput: (e: any) => {
+                exerciseQuery = readEventValue(e);
+              },
+              oninput: (e: any) => {
+                exerciseQuery = readEventValue(e);
               },
             }),
             m(
@@ -150,8 +159,14 @@ const PoseViewer: m.Component = {
                 interfaceOptions: { cssClass: "exercise-select-alert" },
                 value: exercise()?.meta?.name,
                 placeholder: `Select Exercise (${filteredExercises.length})`,
-                onIonChange: (e: { detail?: { value?: string } }) => {
-                  const picked = e.detail?.value || "";
+                onionchange: (e: any) => {
+                  const picked = readEventValue(e);
+                  const selected = exercises.find((ex) => ex.meta.name === picked);
+                  exercise(selected || null);
+                  saveSelectedPoseExercise(selected?.meta.name || null);
+                },
+                onchange: (e: any) => {
+                  const picked = readEventValue(e);
                   const selected = exercises.find((ex) => ex.meta.name === picked);
                   exercise(selected || null);
                   saveSelectedPoseExercise(selected?.meta.name || null);

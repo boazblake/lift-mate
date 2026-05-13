@@ -14,6 +14,12 @@ import { exercises as poseExercises } from "./Pose/exercises";
 
 let selectedExerciseName = "Squat";
 
+const readEventValue = (e: any): string => {
+  if (typeof e?.detail?.value === "string") return e.detail.value;
+  if (typeof e?.target?.value === "string") return e.target.value;
+  return "";
+};
+
 const resolvePoseExerciseFromWorkout = (workout: Workout): string | null => {
   for (const item of workout.exercises) {
     const resolved = resolveTrackableExercise(item.name);
@@ -72,8 +78,14 @@ const HomePage: m.Component = {
               value: selectedExerciseName,
               interface: "alert",
               interfaceOptions: { cssClass: "exercise-select-alert" },
-              onIonChange: (e: { detail?: { value?: string } }) => {
-                const next = e.detail?.value || "";
+              onionchange: (e: any) => {
+                const next = readEventValue(e);
+                if (!next) return;
+                selectedExerciseName = next;
+                saveSelectedPoseExercise(next);
+              },
+              onchange: (e: any) => {
+                const next = readEventValue(e);
                 if (!next) return;
                 selectedExerciseName = next;
                 saveSelectedPoseExercise(next);
