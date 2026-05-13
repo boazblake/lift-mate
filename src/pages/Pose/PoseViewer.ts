@@ -48,10 +48,41 @@ const createSummaryDraft = () => {
 
 let isSavingSummary = false;
 let exerciseQuery = "";
+let isStartingSession = false;
+let shouldAutoStart = false;
+
+const startSession = async () => {
+  const hasExercise = Boolean(exercise()?.meta?.name);
+  if (!hasExercise || isLoading() || isStartingSession) return;
+  isStartingSession = true;
+  try {
+    transition("start");
+    await cameraService.initialize();
+    await holisticService.initialize();
+    if (camera.ready() && holistic.ready()) {
+      startupError(null);
+      summaryDraft(null);
+      recording.startTime(Date.now());
+      transition("ready");
+      renderService.startLoop();
+      holisticService.startFrameLoop();
+      transition("beginStreaming");
+    } else {
+      transition("error");
+    }
+  } catch (error) {
+    transition("error");
+    const message = error instanceof Error ? error.message : "Unknown error";
+    startupError(message);
+  } finally {
+    isStartingSession = false;
+  }
+};
 
 const PoseViewer: m.Component = {
   oninit: () => {
     const fromRoute = m.route.param("exercise");
+    shouldAutoStart = m.route.param("autostart") === "1";
     const fromStorage = loadSelectedPoseExercise();
     const selectedName = fromRoute || fromStorage;
     if (!selectedName) return;
@@ -64,6 +95,12 @@ const PoseViewer: m.Component = {
   oncreate: ({ dom }) => {
     elements.video(dom.querySelector("video"));
     elements.canvas(dom.querySelector("canvas"));
+    if (shouldAutoStart && exercise()?.meta?.name) {
+      shouldAutoStart = false;
+      setTimeout(() => {
+        void startSession();
+      }, 0);
+    }
   },
 
   onremove: async () => {
@@ -101,8 +138,8 @@ const PoseViewer: m.Component = {
               value: exerciseQuery,
               debounce: 80,
               placeholder: "Search 800+ exercises",
-              oninput: (e: { target: { value?: string } }) => {
-                exerciseQuery = e.target.value || "";
+              onIonInput: (e: { detail?: { value?: string } }) => {
+                exerciseQuery = e.detail?.value || "";
               },
             }),
             m(
@@ -110,10 +147,12 @@ const PoseViewer: m.Component = {
               {
                 class: "exercise-select",
                 interface: "alert",
+                interfaceOptions: { cssClass: "exercise-select-alert" },
                 value: exercise()?.meta?.name,
                 placeholder: `Select Exercise (${filteredExercises.length})`,
-                onchange: (e: { target: { value: string } }) => {
-                  const selected = exercises.find((ex) => ex.meta.name === e.target.value);
+                onIonChange: (e: { detail?: { value?: string } }) => {
+                  const picked = e.detail?.value || "";
+                  const selected = exercises.find((ex) => ex.meta.name === picked);
                   exercise(selected || null);
                   saveSelectedPoseExercise(selected?.meta.name || null);
                 },
@@ -135,29 +174,7 @@ const PoseViewer: m.Component = {
                 {
                   size: "small",
                   disabled: isLoading() || !hasExercise,
-                  onclick: async () => {
-                    if (!hasExercise) return;
-                    try {
-                      transition("start");
-                      await cameraService.initialize();
-                      await holisticService.initialize();
-                      if (camera.ready() && holistic.ready()) {
-                        startupError(null);
-                        summaryDraft(null);
-                        recording.startTime(Date.now());
-                        transition("ready");
-                        renderService.startLoop();
-                        holisticService.startFrameLoop();
-                        transition("beginStreaming");
-                      } else {
-                        transition("error");
-                      }
-                    } catch (error) {
-                      transition("error");
-                      const message = error instanceof Error ? error.message : "Unknown error";
-                      startupError(message);
-                    }
-                  },
+                  onclick: () => void startSession(),
                 },
                 "Start"
               ),
