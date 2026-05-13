@@ -1,5 +1,6 @@
 import { Exercise, FeedbackConfig, Pose } from "../types";
 import { calculateAngle, updateRawProp, drawExerciseFeedback } from "./utils";
+import { synthesizeFeedbackCues } from "@/domain/exrx";
 
 export const SquatExercise: Exercise = {
   id: "squat",
@@ -106,6 +107,7 @@ export const SquatExercise: Exercise = {
           color: "yellow",
         },
         { label: "Status", value: currentSquatStatus, color: "blue" },
+        { label: "Cue", value: synthesizeFeedbackCues("Squat")[0], color: "green" },
       ],
       visualProps: {
         ...meta.visualProps,

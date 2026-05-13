@@ -1,5 +1,6 @@
 import { Exercise, FeedbackConfig, Pose } from "../types";
 import { calculateAngle, updateRawProp, drawExerciseFeedback } from "./utils";
+import { synthesizeFeedbackCues } from "@/domain/exrx";
 
 export const OverheadPressExercise: Exercise = {
   id: "overhead_press",
@@ -97,6 +98,7 @@ export const OverheadPressExercise: Exercise = {
           color: "yellow",
         },
         { label: "Status", value: currentPressStatus, color: "blue" },
+        { label: "Cue", value: synthesizeFeedbackCues("Overhead Press")[0], color: "green" },
       ],
       visualProps: {
         ...meta.visualProps,

@@ -1,63 +1,169 @@
 import m from "mithril";
+import { Capacitor } from "@capacitor/core";
 import {
   state,
   transition,
   camera,
   elements,
-  features,
   recording,
   exercise,
   isLoading,
   holistic,
+  startupError,
+  coaching,
+  summaryDraft,
 } from "./store";
 import { cameraService } from "./camera.service";
 import { holisticService } from "./holistic.service";
 import { renderService } from "./render.service";
 import { exercises } from "./exercises";
 import { saveRecording } from "./model.utils";
+import {
+  loadSelectedPoseExercise,
+  saveSelectedPoseExercise,
+} from "../../stores/poseSelectionStore";
+import {
+  buildSessionSummary,
+  saveSessionSummary,
+} from "../../services/sessionFinalize.service";
 import "./pose.css";
 
+const clearSessionRuntime = () => {
+  recording.active(false);
+  recording.startTime(null);
+  recording.frames([]);
+};
+
+const createSummaryDraft = () => {
+  const summary = buildSessionSummary({
+    exerciseName: exercise()?.meta?.name || "Unknown",
+    reps: coaching().repCount,
+    status: coaching().status,
+    startTime: recording.startTime(),
+    frameCount: recording.frames().length,
+    hadError: Boolean(startupError()),
+  });
+  summaryDraft(summary);
+};
+
+let isSavingSummary = false;
+let exerciseQuery = "";
+
 const PoseViewer: m.Component = {
+  oninit: () => {
+    const fromRoute = m.route.param("exercise");
+    const fromStorage = loadSelectedPoseExercise();
+    const selectedName = fromRoute || fromStorage;
+    if (!selectedName) return;
+    const selected = exercises.find((ex) => ex.meta.name === selectedName);
+    if (selected) {
+      exercise(selected);
+    }
+  },
+
   oncreate: ({ dom }) => {
     elements.video(dom.querySelector("video"));
     elements.canvas(dom.querySelector("canvas"));
   },
 
   onremove: async () => {
+    renderService.stopLoop();
     await cameraService.stop();
     await holisticService.close();
+    summaryDraft(null);
+    isSavingSummary = false;
+    clearSessionRuntime();
     transition("stop");
   },
 
   view: () => {
     const currentState = state();
+    const hasExercise = Boolean(exercise()?.meta?.name);
+    const draft = summaryDraft();
+    const isPreflight = (currentState === "Idle" || currentState === "Stopped") && !draft;
+    const isWeb = Capacitor.getPlatform() === "web";
+    const shouldMirrorPreview = isWeb && camera.position() === "front";
+    const filteredExercises = exercises.filter((item) =>
+      item.meta.name.toLowerCase().includes(exerciseQuery.trim().toLowerCase())
+    );
 
     return m(
-      "section.pose-viewer",
+      "section#video-feed.pose-viewer",
       { style: { position: "relative", width: "100%", height: "100%" } },
       [
-        // Exercise selector
+        m("ion-note", { style: "position:absolute; top: 8px; left: 12px; z-index: 26; color: #d7d7d7;" }, "Step 2: Train"),
         m(
-          "ion-select",
-          {
-            class: "exercise-select",
-            value: exercise()?.meta?.name,
-            onchange: (e: any) => {
-              const selected = exercises.find(
-                (ex) => ex.meta.name === e.target.value
-              );
-              exercise(selected || null);
-            },
-          },
+          "div",
+          { class: "pose-topbar", style: "top: 28px;" },
           [
-            m("ion-select-option", { value: "" }, "Select Exercise"),
-            ...exercises.map((ex) =>
-              m("ion-select-option", { value: ex.meta.name }, ex.meta.name)
-            ),
+            m("ion-searchbar", {
+              class: "exercise-search",
+              value: exerciseQuery,
+              debounce: 80,
+              placeholder: "Search 800+ exercises",
+              oninput: (e: { target: { value?: string } }) => {
+                exerciseQuery = e.target.value || "";
+              },
+            }),
+            m(
+              "ion-select",
+              {
+                class: "exercise-select",
+                interface: "alert",
+                value: exercise()?.meta?.name,
+                placeholder: `Select Exercise (${filteredExercises.length})`,
+                onchange: (e: { target: { value: string } }) => {
+                  const selected = exercises.find((ex) => ex.meta.name === e.target.value);
+                  exercise(selected || null);
+                  saveSelectedPoseExercise(selected?.meta.name || null);
+                },
+              },
+              filteredExercises.map((ex) =>
+                m("ion-select-option", { value: ex.meta.name }, ex.meta.name)
+              )
+            )
           ]
         ),
 
-        // Video and canvas elements
+        isPreflight &&
+          m("div", { class: "pose-idle-overlay" }, [
+            m("div", { class: "pose-preflight-card" }, [
+              m("h3", "Ready to train"),
+              m("p", hasExercise ? "Tap Start to launch live coaching." : "Select an exercise to enable Start."),
+              m(
+                "ion-button",
+                {
+                  size: "small",
+                  disabled: isLoading() || !hasExercise,
+                  onclick: async () => {
+                    if (!hasExercise) return;
+                    try {
+                      transition("start");
+                      await cameraService.initialize();
+                      await holisticService.initialize();
+                      if (camera.ready() && holistic.ready()) {
+                        startupError(null);
+                        summaryDraft(null);
+                        recording.startTime(Date.now());
+                        transition("ready");
+                        renderService.startLoop();
+                        holisticService.startFrameLoop();
+                        transition("beginStreaming");
+                      } else {
+                        transition("error");
+                      }
+                    } catch (error) {
+                      transition("error");
+                      const message = error instanceof Error ? error.message : "Unknown error";
+                      startupError(message);
+                    }
+                  },
+                },
+                "Start"
+              ),
+            ]),
+          ]),
+
         m("video", {
           playsinline: true,
           autoplay: true,
@@ -70,6 +176,7 @@ const PoseViewer: m.Component = {
             left: 0,
             objectFit: "cover",
             zIndex: 1,
+            transform: shouldMirrorPreview ? "scaleX(-1)" : "none",
           },
         }),
 
@@ -82,115 +189,156 @@ const PoseViewer: m.Component = {
             left: 0,
             objectFit: "cover",
             zIndex: 10,
+            transform: shouldMirrorPreview ? "scaleX(-1)" : "none",
           },
         }),
 
-        // Controls
+        isLoading() &&
+          m(
+            "div.pose-loading-overlay",
+            {
+              role: "status",
+            },
+            [m("ion-spinner"), m("p", "Starting camera...")]
+          ),
+
+        startupError() && (currentState === "Idle" || currentState === "Stopped") &&
+          m("div", { class: "pose-error-banner" }, [
+            m("div", { class: "pose-error-title" }, "Could not start exercise"),
+            m("div", startupError()),
+          ]),
+
         currentState === "Streaming" &&
-          m("ion-fab.controls", { style: { zIndex: 20 } }, [
-            // Feature toggles
+          m("div", { class: "pose-controls" }, [
             m(
-              "ion-fab-button",
+              "ion-button",
               {
-                onclick: () =>
-                  features({ ...features(), pose: !features().pose }),
-              },
-              m("ion-icon", { name: "body-outline" })
-            ),
-
-            m(
-              "ion-fab-button",
-              {
-                onclick: () =>
-                  features({ ...features(), hands: !features().hands }),
-              },
-              m("ion-icon", { name: "hand-left-outline" })
-            ),
-
-            m(
-              "ion-fab-button",
-              {
-                onclick: () =>
-                  features({ ...features(), face: !features().face }),
-              },
-              m("ion-icon", { name: "happy-outline" })
-            ),
-
-            // Camera switch
-            m(
-              "ion-fab-button",
-              {
+                fill: "outline",
+                size: "small",
                 onclick: async () => {
                   transition("switchCamera");
                   await cameraService.switch();
                   transition("completeSwitch");
                 },
               },
-              m("ion-icon", { name: "camera-reverse-outline" })
+              [m("ion-icon", { slot: "start", name: "camera-reverse-outline" }), "Camera"]
             ),
-
-            // Recording
             m(
-              "ion-fab-button",
+              "ion-button",
               {
-                onclick: async () => {
+                color: recording.active() ? "danger" : "primary",
+                size: "small",
+                onclick: () => {
                   const wasActive = recording.active();
                   recording.active(!wasActive);
-                  if (wasActive) {
-                    if (
-                      recording.frames().length > 0 &&
-                      window.confirm("Do you want to save the recording?")
-                    ) {
-                      await saveRecording();
-                    }
-                    recording.frames([]); // Clear frames
+                  if (!wasActive && !recording.startTime()) {
+                    recording.startTime(Date.now());
                   }
                 },
-                color: recording.active() ? "danger" : "primary",
               },
-              m("ion-icon", {
-                name: recording.active()
-                  ? "stop-circle"
-                  : "radio-button-on-outline",
-              })
+              [
+                m("ion-icon", {
+                  slot: "start",
+                  name: recording.active() ? "stop-circle" : "radio-button-on-outline",
+                }),
+                recording.active() ? "Stop Recording" : "Record",
+              ]
+            ),
+            m(
+              "ion-button",
+              {
+                fill: "solid",
+                color: "medium",
+                size: "small",
+                onclick: async () => {
+                  renderService.stopLoop();
+                  await cameraService.stop();
+                  await holisticService.close();
+                  createSummaryDraft();
+                  transition("stop");
+                },
+              },
+              [m("ion-icon", { slot: "start", name: "square-outline" }), "End"]
             ),
           ]),
 
-        // Start button
-        (currentState === "Idle" || currentState === "Stopped") &&
-          m(
-            "ion-fab",
-            {
-              vertical: "center",
-              horizontal: "center",
-              slot: "fixed",
-              style: { zIndex: 20 },
-            },
-            [
+        currentState === "Streaming" &&
+          m("div", { class: "pose-status" }, [
+            m("span", `Reps: ${coaching().repCount}`),
+            m("span", coaching().status),
+            m("span", coaching().cue),
+          ]),
+
+        (currentState === "Stopped" || currentState === "Idle") && draft &&
+          m("div", { class: "pose-summary-sheet" }, [
+            m("h3", "Session Summary"),
+            m("p", `${draft.exercise} - ${draft.reps} reps`),
+            m("p", `${draft.durationSec}s - score ${draft.score}`),
+            m("div", { class: "pose-summary-actions" }, [
               m(
-                "ion-fab-button",
+                "ion-button",
                 {
+                  size: "small",
+                  fill: "outline",
                   onclick: async () => {
-                    transition("start");
-                    await cameraService.initialize();
-                    await holisticService.initialize();
-                    if (camera.ready() && holistic.ready()) {
-                      console.log(holistic);
-                      transition("ready");
-                      renderService.startLoop();
-                      holisticService.sendFrames();
-                      transition("beginStreaming");
-                    } else {
-                      transition("error");
-                      alert("Failed to initialize camera or pose detection.");
+                    if (isSavingSummary) return;
+                    isSavingSummary = true;
+                    try {
+                      if (recording.frames().length > 0 && window.confirm("Save recording file?")) {
+                        await saveRecording();
+                      }
+                      saveSessionSummary(draft);
+                      summaryDraft(null);
+                      clearSessionRuntime();
+                      transition("restart");
+                    } finally {
+                      isSavingSummary = false;
                     }
                   },
-                  disabled: isLoading(),
+                  disabled: isSavingSummary,
                 },
-                isLoading() ? m("ion-spinner") : m("ion-icon", { name: "play" })
+                "Save"
               ),
-            ]
-          ),
+              m(
+                "ion-button",
+                {
+                  size: "small",
+                  onclick: async () => {
+                    if (isSavingSummary) return;
+                    isSavingSummary = true;
+                    try {
+                      if (recording.frames().length > 0 && window.confirm("Save recording file?")) {
+                        await saveRecording();
+                      }
+                      saveSessionSummary(draft);
+                      summaryDraft(null);
+                      clearSessionRuntime();
+                      transition("restart");
+                      m.route.set("/playback");
+                    } finally {
+                      isSavingSummary = false;
+                    }
+                  },
+                  disabled: isSavingSummary,
+                },
+                "Save & Review"
+              ),
+              m(
+                "ion-button",
+                {
+                  size: "small",
+                  fill: "clear",
+                  color: "medium",
+                  onclick: () => {
+                    summaryDraft(null);
+                    clearSessionRuntime();
+                    transition("restart");
+                  },
+                },
+                "Repeat"
+              ),
+            ]),
+          ]),
       ]
     );
   },

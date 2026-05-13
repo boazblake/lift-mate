@@ -5,6 +5,7 @@ import {
   drawExerciseFeedback,
   createMeta,
 } from "./utils";
+import { synthesizeFeedbackCues } from "@/domain/exrx";
 
 export const BenchPressExercise: Exercise = {
   id: "bench_press",
@@ -97,6 +98,7 @@ export const BenchPressExercise: Exercise = {
           value: BenchPressExercise.meta.raw.repCount.at(-1)?.value || 0,
           color: "orange",
         },
+        { label: "Cue", value: synthesizeFeedbackCues("Bench Press")[0], color: "green" },
       ],
       visualProps: {
         ...meta.visualProps,
