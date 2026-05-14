@@ -11,10 +11,9 @@ export default defineConfig(({ mode }) => {
   const isSSL = mode === "ssl";
   console.log("Vite mode:", mode, "isSSL:", isSSL, "isMobile:", isMobile);
 
-  const alias = {
+  const alias: Record<string, string> = {
     "@": path.resolve(__dirname, "./src"),
     "@components": path.resolve(__dirname, "./src/components"),
-    "@exercises": path.resolve(__dirname, "./src/exercises"),
     "@pages": path.resolve(__dirname, "./src/pages"),
     "@utils": path.resolve(__dirname, "./src/utils"),
     "@types": path.resolve(__dirname, "./src/types"),
@@ -41,9 +40,8 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: "autoUpdate",
         devOptions: {
-          enabled: true,
+          enabled: false,
         },
-        mode: "generateSW",
         strategies: "generateSW",
         workbox: {
           globDirectory: "docs", // Match build.outDir

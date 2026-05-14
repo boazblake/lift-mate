@@ -3,7 +3,7 @@ import path from "path";
 
 const ROOT = "https://exrx.net";
 const DIR_URL = `${ROOT}/Lists/Directory`;
-const OUT = path.resolve("src/domain/data/exrx-exercises.json");
+const OUT = path.resolve("src/domain/exrx-data/exercises.json");
 
 const fetchText = async (url) => {
   const res = await fetch(url, { headers: { "user-agent": "Lift-Mate ExRx ingestion" } });

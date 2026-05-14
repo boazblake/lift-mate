@@ -15,7 +15,7 @@ This project ingests exercise reference data from ExRx.net’s public exercise d
   - related links when available
 
 ## Output
-- Deterministic JSON dataset: `src/domain/data/exrx-exercises.json`
+- Deterministic JSON dataset: `src/domain/exrx-data/exercises.json`
 - Stable ordering by normalized name, then URL
 - Duplicate pages are collapsed by canonical URL / normalized name
 
