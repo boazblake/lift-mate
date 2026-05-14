@@ -140,6 +140,9 @@ const PoseViewer: m.Component = {
               const selected = exercises.find((ex) => ex.meta.name === picked);
               exercise(selected || null);
               saveSelectedPoseExercise(selected?.meta.name || null);
+              if ((state() === "Idle" || state() === "Stopped") && selected) {
+                void startSession();
+              }
             },
           })
         ),

@@ -8,14 +8,11 @@ import {
 } from "../stores/workoutStore";
 import type { Workout } from "../stores/workoutStore";
 import { loadSessionSummaries, sessionSummaries } from "../stores/sessionStore";
-import { loadSelectedPoseExercise, saveSelectedPoseExercise } from "../stores/poseSelectionStore";
+import { loadSelectedPoseExercise } from "../stores/poseSelectionStore";
 import { resolveTrackableExercise } from "../domain/exerciseCatalog";
-import { exercises as poseExercises } from "./Pose/exercises";
-import ExerciseAutocomplete from "../components/ExerciseAutocomplete";
+import { getExRxExercise } from "../domain/exrx";
 
-let selectedExerciseName = "Squat";
-
-const exerciseNames = poseExercises.map((ex) => ex.meta.name);
+let lastSelectedExercise = "Squat";
 
 const resolvePoseExerciseFromWorkout = (workout: Workout): string | null => {
   for (const item of workout.exercises) {
@@ -26,7 +23,6 @@ const resolvePoseExerciseFromWorkout = (workout: Workout): string | null => {
 };
 
 const goToPose = (exerciseName?: string | null, autoStart = false) => {
-  saveSelectedPoseExercise(exerciseName || null);
   m.route.set("/pose", {
     exercise: exerciseName || undefined,
     autostart: autoStart ? "1" : undefined,
@@ -46,11 +42,7 @@ const HomePage: m.Component = {
     loadWorkouts();
     loadSessionSummaries();
     const persisted = loadSelectedPoseExercise();
-    if (persisted && poseExercises.some((ex) => ex.meta.name === persisted)) {
-      selectedExerciseName = persisted;
-    } else if (!selectedExerciseName && poseExercises.length > 0) {
-      selectedExerciseName = poseExercises[0].meta.name;
-    }
+    if (persisted) lastSelectedExercise = persisted;
   },
 
   view: () => {
@@ -62,41 +54,28 @@ const HomePage: m.Component = {
     return m("section.home-launch", [
       m("section.home-hero", [
         m("p.home-eyebrow", "Lift-Mate"),
-        m("h2.home-title", "Launch your next set"),
-        m("p.home-subtitle", "Select a movement and jump straight into live camera coaching."),
+        m("h2.home-title", "Recent sessions and fast restart"),
+        m("p.home-subtitle", "Exercise selection now happens on camera screen with instant start once chosen."),
       ]),
 
       m("section.home-actions", [
-        m("ion-item", { lines: "none", class: "home-select-item" }, [
-          m("ion-label", { position: "stacked" }, "Exercise to train"),
-          m(ExerciseAutocomplete, {
-            options: exerciseNames,
-            value: selectedExerciseName,
-            placeholder: "Type an exercise",
-            maxResults: 8,
-            onSelect: (next: string) => {
-              selectedExerciseName = next;
-              saveSelectedPoseExercise(next);
-            },
-          }),
-        ]),
         m(
           "ion-button",
           {
             expand: "block",
             class: "home-start-btn",
-            onclick: () => goToPose(selectedExerciseName, true),
+            onclick: () => goToPose(lastSelectedExercise || undefined),
           },
-          "Start Workout Now"
+          "Go to Exercise Camera"
         ),
         m(
           "ion-button",
           {
             expand: "block",
             fill: "outline",
-            onclick: () => goToPose(selectedExerciseName),
+            onclick: () => m.route.set("/progress"),
           },
-          "Open Camera Setup"
+          "View Progress"
         ),
         resume
           ? m(
@@ -104,10 +83,13 @@ const HomePage: m.Component = {
               {
                 expand: "block",
                 fill: "outline",
-                onclick: () => goToPose(resolvePoseExerciseFromWorkout(resume)),
+                onclick: () => goToPose(resolvePoseExerciseFromWorkout(resume), true),
               },
               `Resume: ${resume.name}`
             )
+          : null,
+        lastSelectedExercise
+          ? m("ion-note", { style: "display:block; color: var(--ion-color-medium);" }, `Last selected exercise: ${lastSelectedExercise}`)
           : null,
       ]),
 
@@ -131,7 +113,7 @@ const HomePage: m.Component = {
             m("ion-card-content", [
               m("h3", { style: "margin: 0 0 8px;" }, "No workouts yet."),
               m("p", { style: "margin: 0 0 12px; color: var(--ion-color-medium);" }, "Start your first workout to begin tracking."),
-              m("ion-button", { size: "small", onclick: () => goToPose(selectedExerciseName, true) }, "Start Workout"),
+              m("ion-button", { size: "small", onclick: () => goToPose(undefined) }, "Open Exercise Camera"),
             ]),
           ])
         : null,
@@ -157,6 +139,11 @@ const HomePage: m.Component = {
                       m("ion-label", [
                         m("h3", w.name),
                         m("p", daysSince(w.lastPerformedAt)),
+                        (() => {
+                          const exerciseName = resolvePoseExerciseFromWorkout(w) || "Unknown";
+                          const exrx = getExRxExercise(exerciseName);
+                          return m("p", { style: "color: var(--ion-color-medium);" }, exrx?.classification?.mechanics || "No mechanics tagged");
+                        })(),
                       ]),
                     ]
                   )
