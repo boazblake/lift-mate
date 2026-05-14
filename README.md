@@ -10,8 +10,10 @@ Camera-first lifting coach built with Ionic + Mithril + Capacitor.
 
 ## Clean Repo Structure
 
-- `src/pages/` app screens (Home, Pose, Playback, Progress)
-- `src/components/` shared UI and shell
+- `src/app/` bootstrap and route wiring
+- `src/features/` screen features (home, pose, playback, progress)
+- `src/shared/components/` shared UI and shell
+- `src/shared/utils/` shared utilities
 - `src/stores/` app state persistence and streams
 - `src/services/` orchestration services
 - `src/domain/` normalized business/data models
