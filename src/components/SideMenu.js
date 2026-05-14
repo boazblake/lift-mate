@@ -2,7 +2,6 @@ import m from "mithril";
 import { canNavigateTo } from "../utils/navigationGuards";
 import { exercises } from "../pages/Pose/exercises";
 import { loadSelectedPoseExercise, saveSelectedPoseExercise } from "../stores/poseSelectionStore";
-import ExerciseAutocomplete from "./ExerciseAutocomplete";
 
 const items = [
   { route: "/", icon: "home-outline", label: "Home" },
@@ -18,6 +17,7 @@ const quickLinks = [
 ];
 
 const allExerciseNames = exercises.map((ex) => ex.meta.name).sort((a, b) => a.localeCompare(b));
+let filterQuery = "";
 
 const usageKey = "liftmate:exerciseUsage";
 const loadUsage = () => {
@@ -39,13 +39,41 @@ const sortByUsageThenAlpha = (names) => {
   });
 };
 
+const filteredExerciseNames = () => {
+  const needle = filterQuery.trim().toLowerCase();
+  const ordered = sortByUsageThenAlpha(allExerciseNames);
+  if (!needle) return ordered;
+  return ordered.filter((name) => name.toLowerCase().includes(needle));
+};
+
+const mostSelectedNames = (names) => {
+  const usage = loadUsage();
+  return names.filter((name) => (usage[name] || 0) > 0).slice(0, 8);
+};
+
+const alphaGroups = (names) => {
+  const groups = {};
+  for (const name of names) {
+    const letter = /^[a-z]/i.test(name) ? name[0].toUpperCase() : "#";
+    if (!groups[letter]) groups[letter] = [];
+    groups[letter].push(name);
+  }
+  return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+};
+
 const chooseExercise = async (name) => {
   if (!name) return;
   saveSelectedPoseExercise(name);
   const usage = loadUsage();
   usage[name] = (usage[name] || 0) + 1;
   saveUsage(usage);
-  await navigate("/pose");
+  if (await canNavigateTo("/pose")) {
+    m.route.set("/pose", { exercise: name, autostart: "1" });
+  }
+  const menu = document.querySelector("ion-menu");
+  if (menu && typeof menu.close === "function") {
+    await menu.close();
+  }
 };
 
 const navigate = async (route) => {
@@ -61,6 +89,9 @@ const navigate = async (route) => {
 const SideMenu = {
   view: () => {
     const activeRoute = m.route.get();
+    const filtered = filteredExerciseNames();
+    const mostSelected = mostSelectedNames(filtered);
+    const groups = alphaGroups(filtered);
     const isActive = (route) =>
       route === "/"
         ? activeRoute === "/"
@@ -88,27 +119,68 @@ const SideMenu = {
               )
             )
           ),
-          activeRoute.startsWith("/pose")
-            ? m("div", { style: "padding: 8px 12px 12px;" }, [
-                m("ion-note", { style: "display:block; margin-bottom: 8px;" }, "Pick exercise (starts session on camera page)"),
-                m(ExerciseAutocomplete, {
-                  options: sortByUsageThenAlpha(allExerciseNames),
-                  value: loadSelectedPoseExercise() || "",
-                  placeholder: "Filter exercises",
-                  maxResults: 12,
-                  onSelect: (name) => {
-                    void chooseExercise(name);
-                  },
-                }),
-              ])
-            : null,
+          m("div", { style: "padding: 8px 12px 12px;" }, [
+            m("ion-note", { style: "display:block; margin-bottom: 8px;" }, "Exercise Library (pick starts session)"),
+            m("input.exercise-autocomplete-input", {
+              value: filterQuery,
+              placeholder: "Filter exercises",
+              oninput: (e) => {
+                filterQuery = e.target.value || "";
+              },
+            }),
+            mostSelected.length
+              ? m("div", { style: "margin-top: 10px;" }, [
+                  m("ion-note", { style: "display:block; margin-bottom: 6px;" }, "Most Selected"),
+                  m(
+                    "div",
+                    { style: "display:flex; flex-wrap:wrap; gap:6px;" },
+                    mostSelected.map((name) =>
+                      m(
+                        "button.exercise-autocomplete-item",
+                        {
+                          type: "button",
+                          style: "width:auto; border-radius:999px; border:1px solid rgba(148,163,184,0.35);",
+                          onclick: () => {
+                            void chooseExercise(name);
+                          },
+                        },
+                        name
+                      )
+                    )
+                  ),
+                ])
+              : null,
+            m("div", { style: "margin-top: 10px;" }, [
+              m("ion-note", { style: "display:block; margin-bottom: 6px;" }, `A-Z (${filtered.length})`),
+              m(
+                "div",
+                {
+                  style: "max-height: 340px; overflow:auto; border:1px solid rgba(148,163,184,0.25); border-radius:10px; padding:6px;",
+                },
+                groups.flatMap(([letter, names]) => [
+                  m("div", { style: "font-size:11px; color:#9fb2cc; padding:6px 4px 4px;" }, letter),
+                  ...names.map((name) =>
+                    m(
+                      "button.exercise-autocomplete-item",
+                      {
+                        type: "button",
+                        onclick: () => {
+                          void chooseExercise(name);
+                        },
+                      },
+                      name
+                    )
+                  ),
+                ])
+              ),
+            ]),
+          ]),
           m("ion-list", { inset: true }, [
             m("ion-list-header", "Quick Links"),
             ...quickLinks.map((item) =>
               m(
                 "ion-item",
                 {
-                  key: `quick-${item.route}`,
                   button: true,
                   detail: false,
                   onclick: () => navigate(item.route),
