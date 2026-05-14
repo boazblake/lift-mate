@@ -119,8 +119,8 @@ const SideMenu = {
               )
             )
           ),
-          m("div", { style: "padding: 8px 12px 12px;" }, [
-            m("ion-note", { style: "display:block; margin-bottom: 8px;" }, "Exercise Library (pick starts session)"),
+          m("div.sidebar-exercise-library", [
+            m("ion-note", { class: "sidebar-library-note" }, "Exercise Library (pick starts session)"),
             m("input.exercise-autocomplete-input", {
               value: filterQuery,
               placeholder: "Filter exercises",
@@ -129,17 +129,17 @@ const SideMenu = {
               },
             }),
             mostSelected.length
-              ? m("div", { style: "margin-top: 10px;" }, [
-                  m("ion-note", { style: "display:block; margin-bottom: 6px;" }, "Most Selected"),
+              ? m("div.sidebar-most-selected", [
+                  m("ion-note", { class: "sidebar-section-label" }, "Most Selected"),
                   m(
                     "div",
-                    { style: "display:flex; flex-wrap:wrap; gap:6px;" },
+                    { class: "sidebar-chip-row" },
                     mostSelected.map((name) =>
                       m(
                         "button.exercise-autocomplete-item",
                         {
                           type: "button",
-                          style: "width:auto; border-radius:999px; border:1px solid rgba(148,163,184,0.35);",
+                          class: "sidebar-chip-btn",
                           onclick: () => {
                             void chooseExercise(name);
                           },
@@ -150,15 +150,13 @@ const SideMenu = {
                   ),
                 ])
               : null,
-            m("div", { style: "margin-top: 10px;" }, [
-              m("ion-note", { style: "display:block; margin-bottom: 6px;" }, `A-Z (${filtered.length})`),
+            m("div.sidebar-az-section", [
+              m("ion-note", { class: "sidebar-section-label" }, `A-Z (${filtered.length})`),
               m(
                 "div",
-                {
-                  style: "max-height: 340px; overflow:auto; border:1px solid rgba(148,163,184,0.25); border-radius:10px; padding:6px;",
-                },
+                { class: "sidebar-az-list" },
                 groups.flatMap(([letter, names]) => [
-                  m("div", { style: "font-size:11px; color:#9fb2cc; padding:6px 4px 4px;" }, letter),
+                  m("div", { class: "sidebar-az-letter" }, letter),
                   ...names.map((name) =>
                     m(
                       "button.exercise-autocomplete-item",

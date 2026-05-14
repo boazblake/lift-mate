@@ -244,3 +244,64 @@ ion-menu ion-item.menu-item {
 .exercise-autocomplete-item:hover {
   background: rgba(148, 163, 184, 0.2);
 }
+
+.sidebar-exercise-library {
+  padding: 8px 12px 12px;
+}
+
+.sidebar-library-note {
+  display: block;
+  margin-bottom: 8px;
+  color: #c9d6ea;
+}
+
+.sidebar-most-selected,
+.sidebar-az-section {
+  margin-top: 10px;
+}
+
+.sidebar-section-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #9fb2cc;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sidebar-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidebar-chip-btn {
+  width: auto;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.8);
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 7px 10px;
+}
+
+.sidebar-az-list {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  padding: 6px;
+  background: rgba(15, 23, 40, 0.55);
+}
+
+.sidebar-az-letter {
+  font-size: 11px;
+  color: #9fb2cc;
+  padding: 8px 4px 4px;
+  font-weight: 600;
+}
+
+.sidebar-az-list .exercise-autocomplete-item {
+  border-radius: 8px;
+  padding: 8px 10px;
+}
