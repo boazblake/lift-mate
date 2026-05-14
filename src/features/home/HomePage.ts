@@ -1,6 +1,6 @@
 import m from "mithril";
-import { loadSessionSummaries, sessionSummaries } from "../stores/sessionStore";
-import { loadSelectedPoseExercise } from "../stores/poseSelectionStore";
+import { loadSessionSummaries, sessionSummaries } from "../../stores/sessionStore";
+import { loadSelectedPoseExercise } from "../../stores/poseSelectionStore";
 
 let lastSelectedExercise = "";
 

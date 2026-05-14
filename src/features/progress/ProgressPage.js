@@ -2,7 +2,7 @@ import m from "mithril";
 import {
   loadSessionSummaries,
   sessionSummaries,
-} from "../stores/sessionStore";
+} from "../../stores/sessionStore";
 
 let isLoading = true;
 let loadError = "";

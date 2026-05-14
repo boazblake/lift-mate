@@ -7,7 +7,7 @@ const safeStopCamera = async () => {
   try {
     await CameraPreview.stop();
   } catch (error) {
-    logger.warn("Safe stop camera:", error);
+    logger.warn(`Safe stop camera: ${String(error)}`);
   }
 };
 
@@ -33,7 +33,7 @@ const initializeWebCamera = async () => {
     }
     return false;
   } catch (error) {
-    logger.error("Web camera failed:", error);
+    logger.error(`Web camera failed: ${String(error)}`);
     return false;
   }
 };
@@ -50,13 +50,13 @@ const initializeNativeCamera = async () => {
       x: 0,
       y: 0,
       toBack: true,
-      enableHighResolution: true, // Start with lower res for stability
+      enableHighResolution: false,
     });
 
     camera.ready(true);
     return true;
   } catch (error) {
-    logger.error("Native camera failed:", error);
+    logger.error(`Native camera failed: ${String(error)}`);
     return false;
   }
 };
@@ -65,24 +65,28 @@ export const cameraService = {
   initialize: async () => {
     const platform = Capacitor.getPlatform();
     let success = false;
+    let lastError = "Unknown camera error";
 
     if (platform === "web") {
       success = await initializeWebCamera();
+      if (!success) lastError = "Web camera initialization failed";
     } else {
       // Try native camera first
       success = await initializeNativeCamera();
+      if (!success) lastError = "Native camera preview initialization failed";
 
       // If native fails, try web camera as fallback
       if (!success) {
         logger.info("Falling back to web camera implementation");
         success = await initializeWebCamera();
+        if (!success) lastError = "Native and fallback web camera initialization both failed";
       }
     }
 
     if (!success) {
       state("Stopped");
       transition("error");
-      throw new Error("Could not initialize camera");
+      throw new Error(lastError);
     }
   },
 
@@ -109,7 +113,7 @@ export const cameraService = {
       camera.position(camera.position() === "front" ? "rear" : "front");
       await cameraService.initialize();
     } catch (error) {
-      logger.error("Camera switch failed:", error);
+      logger.error(`Camera switch failed: ${String(error)}`);
       state("Stopped");
       transition("error");
     }
@@ -125,7 +129,7 @@ export const cameraService = {
       camera.ready(false);
       camera.position("front");
     } catch (error) {
-      logger.error("Camera cleanup failed:", error);
+      logger.error(`Camera cleanup failed: ${String(error)}`);
     }
   },
 };

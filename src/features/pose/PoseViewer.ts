@@ -17,11 +17,9 @@ import { cameraService } from "./camera.service";
 import { holisticService } from "./holistic.service";
 import { renderService } from "./render.service";
 import { exercises } from "./exercises";
-import ExerciseAutocomplete from "../../components/ExerciseAutocomplete";
 import { saveRecording } from "./model.utils";
 import {
   loadSelectedPoseExercise,
-  saveSelectedPoseExercise,
 } from "../../stores/poseSelectionStore";
 import {
   buildSessionSummary,
@@ -50,8 +48,6 @@ const createSummaryDraft = () => {
 let isSavingSummary = false;
 let isStartingSession = false;
 let shouldAutoStart = false;
-
-const exerciseNames = exercises.map((ex) => ex.meta.name);
 
 const startSession = async () => {
   const hasExercise = Boolean(exercise()?.meta?.name);
@@ -131,20 +127,7 @@ const PoseViewer: m.Component = {
         m(
           "div",
           { class: "pose-topbar", style: "top: 28px;" },
-          m(ExerciseAutocomplete, {
-            options: exerciseNames,
-            value: exercise()?.meta?.name || "",
-            placeholder: "Search exercises",
-            maxResults: 10,
-            onSelect: (picked: string) => {
-              const selected = exercises.find((ex) => ex.meta.name === picked);
-              exercise(selected || null);
-              saveSelectedPoseExercise(selected?.meta.name || null);
-              if ((state() === "Idle" || state() === "Stopped") && selected) {
-                void startSession();
-              }
-            },
-          })
+          m("ion-note", { style: "color:#d7d7d7;" }, exercise()?.meta?.name || "Pick exercise from sidebar")
         ),
 
         isPreflight &&

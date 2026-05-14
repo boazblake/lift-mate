@@ -1,5 +1,6 @@
-import { elements, holistic, features, recording } from "./store";
+import { elements, holistic, features, recording, camera } from "./store";
 import { DrawOptions } from "./types";
+import { Capacitor } from "@capacitor/core";
 
 const defaultDrawOptions: DrawOptions = {
   pose: { color: "red", radius: 5, lineWidth: 2 },
@@ -7,31 +8,47 @@ const defaultDrawOptions: DrawOptions = {
   face: { color: "white", radius: 1, lineWidth: 1 },
 };
 
+const isNative = Capacitor.getPlatform() !== "web";
+let isRenderLoopRunning = false;
+let renderRafId: number | null = null;
+
 export const renderService = {
   startLoop: () => {
+    if (isRenderLoopRunning) return;
+    isRenderLoopRunning = true;
     const canvas = elements.canvas();
-    if (!canvas) return;
+    if (!canvas) {
+      isRenderLoopRunning = false;
+      return;
+    }
     const ctx = canvas.getContext("2d");
     elements.context(ctx);
     const video = elements.video();
 
-    if (!canvas || !ctx || !video) return;
+    if (!canvas || !ctx || !video) {
+      isRenderLoopRunning = false;
+      return;
+    }
 
     const draw = () => {
-      requestAnimationFrame(draw);
+      if (!isRenderLoopRunning) return;
+      renderRafId = requestAnimationFrame(draw);
 
       const canvas = elements.canvas();
       const ctx = elements.context();
       const video = elements.video();
 
-      if (!canvas || !ctx || !video || !video.videoWidth) return;
+      if (!canvas || !ctx) return;
+      if (!isNative && (!video || !video.videoWidth)) return;
 
       // Set canvas dimensions to match its display size (CSS pixels)
       canvas.width = canvas.clientWidth;
       canvas.height = canvas.clientHeight;
 
       // Calculate effective video dimensions and position due to object-fit: cover
-      const videoAspectRatio = video.videoWidth / video.videoHeight;
+      const videoAspectRatio = isNative
+        ? canvas.width / canvas.height
+        : (video as HTMLVideoElement).videoWidth / (video as HTMLVideoElement).videoHeight;
       const canvasAspectRatio = canvas.width / canvas.height;
 
       let renderedVideoWidth: number;
@@ -52,18 +69,22 @@ export const renderService = {
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, offsetX, offsetY, renderedVideoWidth, renderedVideoHeight);
+      if (!isNative && video) {
+        ctx.drawImage(video, offsetX, offsetY, renderedVideoWidth, renderedVideoHeight);
+      }
 
       if (holistic.ready()) {
         const data = holistic.data();
+        const shouldMirrorX = isNative && camera.position() === "front";
         // Function to transform normalized landmark coordinates to canvas pixel coordinates
         const transformLandmark = (landmark: any) => {
           if (typeof landmark.x !== 'number' || typeof landmark.y !== 'number' || isNaN(landmark.x) || isNaN(landmark.y)) {
             console.warn("Invalid landmark coordinates:", landmark);
             return { x: NaN, y: NaN, z: landmark.z, visibility: landmark.visibility }; // Return NaN to indicate invalid
           }
+          const x = shouldMirrorX ? 1 - landmark.x : landmark.x;
           return {
-            x: offsetX + landmark.x * renderedVideoWidth,
+            x: offsetX + x * renderedVideoWidth,
             y: offsetY + landmark.y * renderedVideoHeight,
             z: landmark.z, // Keep z-coordinate if present
             visibility: landmark.visibility, // Keep visibility if present
@@ -128,7 +149,15 @@ export const renderService = {
       }
     };
 
-    requestAnimationFrame(draw);
+    renderRafId = requestAnimationFrame(draw);
+  },
+
+  stopLoop: () => {
+    isRenderLoopRunning = false;
+    if (renderRafId !== null) {
+      cancelAnimationFrame(renderRafId);
+      renderRafId = null;
+    }
   },
 };
 

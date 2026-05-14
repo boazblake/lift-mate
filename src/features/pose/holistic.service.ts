@@ -3,7 +3,7 @@ import m from "mithril";
 import { Capacitor } from "@capacitor/core";
 import { CameraPreview } from "@capacitor-community/camera-preview";
 import CapacitorMediaPipe from "./media-pipe";
-import { synthesizeFeedbackCues } from "@/domain/exrx";
+import { getExerciseAnalysisProfile, synthesizeFeedbackCues } from "@/domain/exrx";
 
 // This service abstracts the MediaPipe functionality for both web and native platforms.
 // On the web, it uses the JS-based @mediapipe/tasks-vision library.
@@ -50,6 +50,16 @@ const computeAngle = (a: any, b: any, c: any): number => {
 
 const elbowsFlexed = (elbowAngle: number) => elbowAngle <= 100;
 
+const poseAngles = (poseLandmarks: any[]) => {
+  const leftKnee = computeAngle(poseLandmarks[23], poseLandmarks[25], poseLandmarks[27]);
+  const rightKnee = computeAngle(poseLandmarks[24], poseLandmarks[26], poseLandmarks[28]);
+  const leftElbow = computeAngle(poseLandmarks[11], poseLandmarks[13], poseLandmarks[15]);
+  const rightElbow = computeAngle(poseLandmarks[12], poseLandmarks[14], poseLandmarks[16]);
+  const avgKnee = (leftKnee + rightKnee) / 2;
+  const avgElbow = (leftElbow + rightElbow) / 2;
+  return { avgKnee, avgElbow };
+};
+
 const analyzePose = (poseLandmarks: any[]) => {
   if (!poseLandmarks || poseLandmarks.length < 29) {
     return { repCount: coaching().repCount, status: "No pose", cue: "Step into frame" };
@@ -76,10 +86,11 @@ const analyzePose = (poseLandmarks: any[]) => {
     lastRepAtMs = 0;
   }
 
-  if (selected === "Squat") {
-    const left = computeAngle(poseLandmarks[23], poseLandmarks[25], poseLandmarks[27]);
-    const right = computeAngle(poseLandmarks[24], poseLandmarks[26], poseLandmarks[28]);
-    const knee = (left + right) / 2;
+  const profile = getExerciseAnalysisProfile(selected || "");
+  const { avgKnee, avgElbow } = poseAngles(poseLandmarks);
+
+  if (profile.key === "squat") {
+    const knee = avgKnee;
     const status = knee < 90 ? "Down" : knee < 160 ? "Mid" : "Up";
     if (status === "Down") squatWasDown = true;
     const completed = squatWasDown && status === "Up";
@@ -92,18 +103,26 @@ const analyzePose = (poseLandmarks: any[]) => {
     };
   }
 
-  if (selected === "Bench Press" || selected === "Overhead Press") {
+  if (profile.key === "lunge") {
+    const knee = avgKnee;
+    const status = knee < 100 ? "Down" : knee < 155 ? "Mid" : "Up";
+    if (status === "Down") squatWasDown = true;
+    const completed = squatWasDown && status === "Up";
+    if (completed) squatWasDown = false;
+    return {
+      repCount: completed ? prev.repCount + 1 : prev.repCount,
+      status,
+      cue: status === "Mid" ? cueAt(0, "Drop into lunge") : status === "Down" ? cueAt(1, "Drive through front heel") : cueAt(2, "Stand tall"),
+    };
+  }
+
+  if (profile.key === "press") {
     const leftShoulder = poseLandmarks[11];
     const rightShoulder = poseLandmarks[12];
-    const leftElbow = poseLandmarks[13];
-    const rightElbow = poseLandmarks[14];
     const leftWrist = poseLandmarks[15];
     const rightWrist = poseLandmarks[16];
     const nose = poseLandmarks[0];
-
-    const left = computeAngle(leftShoulder, leftElbow, leftWrist);
-    const right = computeAngle(rightShoulder, rightElbow, rightWrist);
-    const elbow = (left + right) / 2;
+    const elbow = avgElbow;
 
     const avgShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
     const avgWristY = (leftWrist.y + rightWrist.y) / 2;
@@ -113,7 +132,7 @@ const analyzePose = (poseLandmarks: any[]) => {
     const wristsNearShoulderLine = avgWristY > avgShoulderY - 0.01;
     const wristsNearHeadLevel = avgWristY < avgNoseY + 0.04;
 
-    const isOverheadPress = selected === "Overhead Press";
+    const isOverheadPress = selected.toLowerCase().includes("overhead") || selected.toLowerCase().includes("shoulder press");
 
     const isLowered = isOverheadPress
       ? elbowsFlexed(elbow) && wristsNearShoulderLine
@@ -153,10 +172,54 @@ const analyzePose = (poseLandmarks: any[]) => {
     };
   }
 
+  if (profile.key === "hinge") {
+    const hip = computeAngle(poseLandmarks[11], poseLandmarks[23], poseLandmarks[25]);
+    const status = hip < 120 ? "Hinged" : hip < 155 ? "Mid" : "Tall";
+    if (status === "Hinged") squatWasDown = true;
+    const completed = squatWasDown && status === "Tall";
+    if (completed) squatWasDown = false;
+    return {
+      repCount: completed ? prev.repCount + 1 : prev.repCount,
+      status,
+      cue: status === "Mid" ? cueAt(0, "Push hips back") : status === "Hinged" ? cueAt(1, "Drive hips through") : cueAt(2, "Brace and repeat"),
+    };
+  }
+
+  if (profile.key === "pull") {
+    const status = avgElbow < 95 ? "Pulled" : avgElbow < 145 ? "Mid" : "Extended";
+    if (status === "Extended") pressWasLowered = true;
+    const completed = pressWasLowered && status === "Pulled";
+    if (completed) pressWasLowered = false;
+    return {
+      repCount: completed ? prev.repCount + 1 : prev.repCount,
+      status,
+      cue: status === "Mid" ? cueAt(0, "Lead with elbows") : status === "Pulled" ? cueAt(1, "Squeeze back") : cueAt(2, "Control return"),
+    };
+  }
+
+  if (profile.key === "core") {
+    const trunk = computeAngle(poseLandmarks[11], poseLandmarks[23], poseLandmarks[25]);
+    const stable = trunk > 145;
+    return {
+      repCount: prev.repCount,
+      status: stable ? "Stable" : "Adjust",
+      cue: stable ? cueAt(0, "Brace and breathe") : cueAt(1, "Keep ribs down and pelvis neutral"),
+    };
+  }
+
+  if (profile.key === "cardio") {
+    const cadence = avgKnee < 145 ? "Active" : "Steady";
+    return {
+      repCount: prev.repCount + (cadence === "Active" ? 1 : 0),
+      status: cadence,
+      cue: cueAt(0, "Stay rhythmic and upright"),
+    };
+  }
+
   return {
     repCount: prev.repCount,
-    status: "Ready",
-    cue: cueAt(0, "Select an exercise"),
+    status: profile.display,
+    cue: cueAt(0, "Move with control"),
   };
 };
 

@@ -1,7 +1,7 @@
 import m from "mithril";
 import Stream from "mithril-stream";
 import { PoseFrame } from "@/types";
-import { drawLandmarks } from "@/pages/Pose/model.utils";
+import { drawLandmarks } from "@/features/pose/model.utils";
 
 // Playback State Streams
 export const playbackPoses = Stream<Array<PoseFrame>>([]); // Loaded poses for playback

@@ -1,5 +1,7 @@
 import Stream from "mithril/stream";
+import m from "mithril";
 import type { HolisticData, FSMState, FSMTransitions } from "./types";
+import type { SessionSummary } from "../../domain/session";
 
 // FSM Definition
 const transitions: FSMTransitions = {
@@ -17,6 +19,7 @@ export const transition = (event: string): boolean => {
   const nextState = transitions[currentState]?.[event];
   if (nextState) {
     state(nextState);
+    m.redraw();
     return true;
   }
   return false;
@@ -68,6 +71,15 @@ export const recording = {
 };
 
 export const exercise = Stream<any>(null);
+export const startupError = Stream<string | null>(null);
+
+export const coaching = Stream({
+  repCount: 0,
+  status: "Ready",
+  cue: "Select exercise and start",
+});
+
+export const summaryDraft = Stream<SessionSummary | null>(null);
 
 export const isLoading = Stream.lift(
   (s: FSMState) => s === "Loading" || s === "SwitchingCamera",
