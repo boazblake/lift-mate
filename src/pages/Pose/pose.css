@@ -102,7 +102,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 12px;
@@ -110,9 +110,15 @@
   background: rgba(0, 0, 0, 0.45);
 }
 
+.pose-status span {
+  white-space: nowrap;
+}
+
 .pose-status span:last-child {
   flex: 1;
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pose-error-banner {

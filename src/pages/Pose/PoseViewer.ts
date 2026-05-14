@@ -17,6 +17,7 @@ import { cameraService } from "./camera.service";
 import { holisticService } from "./holistic.service";
 import { renderService } from "./render.service";
 import { exercises } from "./exercises";
+import ExerciseAutocomplete from "../../components/ExerciseAutocomplete";
 import { saveRecording } from "./model.utils";
 import {
   loadSelectedPoseExercise,
@@ -47,15 +48,10 @@ const createSummaryDraft = () => {
 };
 
 let isSavingSummary = false;
-let exerciseQuery = "";
 let isStartingSession = false;
 let shouldAutoStart = false;
 
-const readEventValue = (e: any): string => {
-  if (typeof e?.detail?.value === "string") return e.detail.value;
-  if (typeof e?.target?.value === "string") return e.target.value;
-  return "";
-};
+const exerciseNames = exercises.map((ex) => ex.meta.name);
 
 const startSession = async () => {
   const hasExercise = Boolean(exercise()?.meta?.name);
@@ -126,9 +122,6 @@ const PoseViewer: m.Component = {
     const isPreflight = (currentState === "Idle" || currentState === "Stopped") && !draft;
     const isWeb = Capacitor.getPlatform() === "web";
     const shouldMirrorPreview = isWeb && camera.position() === "front";
-    const filteredExercises = exercises.filter((item) =>
-      item.meta.name.toLowerCase().includes(exerciseQuery.trim().toLowerCase())
-    );
 
     return m(
       "section#video-feed.pose-viewer",
@@ -138,45 +131,17 @@ const PoseViewer: m.Component = {
         m(
           "div",
           { class: "pose-topbar", style: "top: 28px;" },
-          [
-            m("ion-searchbar", {
-              class: "exercise-search",
-              value: exerciseQuery,
-              debounce: 80,
-              placeholder: "Search 800+ exercises",
-              onioninput: (e: any) => {
-                exerciseQuery = readEventValue(e);
-              },
-              oninput: (e: any) => {
-                exerciseQuery = readEventValue(e);
-              },
-            }),
-            m(
-              "ion-select",
-              {
-                class: "exercise-select",
-                interface: "alert",
-                interfaceOptions: { cssClass: "exercise-select-alert" },
-                value: exercise()?.meta?.name,
-                placeholder: `Select Exercise (${filteredExercises.length})`,
-                onionchange: (e: any) => {
-                  const picked = readEventValue(e);
-                  const selected = exercises.find((ex) => ex.meta.name === picked);
-                  exercise(selected || null);
-                  saveSelectedPoseExercise(selected?.meta.name || null);
-                },
-                onchange: (e: any) => {
-                  const picked = readEventValue(e);
-                  const selected = exercises.find((ex) => ex.meta.name === picked);
-                  exercise(selected || null);
-                  saveSelectedPoseExercise(selected?.meta.name || null);
-                },
-              },
-              filteredExercises.map((ex) =>
-                m("ion-select-option", { value: ex.meta.name }, ex.meta.name)
-              )
-            )
-          ]
+          m(ExerciseAutocomplete, {
+            options: exerciseNames,
+            value: exercise()?.meta?.name || "",
+            placeholder: "Search exercises",
+            maxResults: 10,
+            onSelect: (picked: string) => {
+              const selected = exercises.find((ex) => ex.meta.name === picked);
+              exercise(selected || null);
+              saveSelectedPoseExercise(selected?.meta.name || null);
+            },
+          })
         ),
 
         isPreflight &&
@@ -296,6 +261,7 @@ const PoseViewer: m.Component = {
 
         currentState === "Streaming" &&
           m("div", { class: "pose-status" }, [
+            m("span", exercise()?.meta?.name || "No exercise"),
             m("span", `Reps: ${coaching().repCount}`),
             m("span", coaching().status),
             m("span", coaching().cue),

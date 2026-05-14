@@ -11,14 +11,11 @@ import { loadSessionSummaries, sessionSummaries } from "../stores/sessionStore";
 import { loadSelectedPoseExercise, saveSelectedPoseExercise } from "../stores/poseSelectionStore";
 import { resolveTrackableExercise } from "../domain/exerciseCatalog";
 import { exercises as poseExercises } from "./Pose/exercises";
+import ExerciseAutocomplete from "../components/ExerciseAutocomplete";
 
 let selectedExerciseName = "Squat";
 
-const readEventValue = (e: any): string => {
-  if (typeof e?.detail?.value === "string") return e.detail.value;
-  if (typeof e?.target?.value === "string") return e.target.value;
-  return "";
-};
+const exerciseNames = poseExercises.map((ex) => ex.meta.name);
 
 const resolvePoseExerciseFromWorkout = (workout: Workout): string | null => {
   for (const item of workout.exercises) {
@@ -72,29 +69,16 @@ const HomePage: m.Component = {
       m("section.home-actions", [
         m("ion-item", { lines: "none", class: "home-select-item" }, [
           m("ion-label", { position: "stacked" }, "Exercise to train"),
-          m(
-            "ion-select",
-            {
-              value: selectedExerciseName,
-              interface: "alert",
-              interfaceOptions: { cssClass: "exercise-select-alert" },
-              onionchange: (e: any) => {
-                const next = readEventValue(e);
-                if (!next) return;
-                selectedExerciseName = next;
-                saveSelectedPoseExercise(next);
-              },
-              onchange: (e: any) => {
-                const next = readEventValue(e);
-                if (!next) return;
-                selectedExerciseName = next;
-                saveSelectedPoseExercise(next);
-              },
+          m(ExerciseAutocomplete, {
+            options: exerciseNames,
+            value: selectedExerciseName,
+            placeholder: "Type an exercise",
+            maxResults: 8,
+            onSelect: (next: string) => {
+              selectedExerciseName = next;
+              saveSelectedPoseExercise(next);
             },
-            poseExercises.map((ex) =>
-              m("ion-select-option", { value: ex.meta.name }, ex.meta.name)
-            )
-          ),
+          }),
         ]),
         m(
           "ion-button",
