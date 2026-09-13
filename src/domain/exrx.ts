@@ -28,6 +28,8 @@ export const normalizeExerciseName = (name: string) => name.toLowerCase().replac
 
 export const getExRxExercise = (name: string) => byName.get(normalizeExerciseName(name)) || byName.get(name.toLowerCase());
 
+export const getExRxExerciseNames = () => exrx.exercises.map((exercise) => exercise.name);
+
 const fallbackCues: Record<string, string[]> = {
   squat: ["Brace your core.", "Keep knees tracking over toes.", "Control the descent."],
   "bench press": ["Keep shoulders packed.", "Lower with control.", "Drive through the floor and press evenly."],
