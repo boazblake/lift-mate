@@ -25,10 +25,12 @@ export default defineConfig(({ mode }) => {
   // When not building for mobile, we replace the native plugin definition
   // with our web-based shim.
   if (!isMobile) {
-    alias["@/pages/Pose/media-pipe"] = path.resolve(
+    const webMediaPipeShim = path.resolve(
       __dirname,
       "./src/shims/capacitor-media-pipe.ts"
     );
+    alias["@/pages/Pose/media-pipe"] = webMediaPipeShim;
+    alias["capacitor-media-pipe"] = webMediaPipeShim;
   }
 
   return {
