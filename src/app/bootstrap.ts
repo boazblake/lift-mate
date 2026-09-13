@@ -1,5 +1,6 @@
 import m from "mithril";
 import routes from "./routes";
+import { getRoutePrefix } from "./routePrefix";
 import model from "../model";
 import type { Model, DisplayType } from "../types";
 import "setimmediate";
@@ -97,7 +98,7 @@ const start = async () => {
 
   (model as Model).settings.displayType = getDisplayType(winW);
   checkWidth(winW);
-  m.route.prefix = "";
+  m.route.prefix = getRoutePrefix(import.meta.env.BASE_URL);
   m.route(root, "/", routes());
 };
 
