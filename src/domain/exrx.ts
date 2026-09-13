@@ -1,4 +1,4 @@
-import dataset from "./exrx-data/exercises.json";
+import dataset from "./data/exrx-exercises.json";
 
 export type ExRxClassification = {
   utility?: string;
@@ -19,10 +19,6 @@ export type ExRxExercise = {
 };
 
 export type ExRxDataset = { source: string; generatedAt: string; count: number; exercises: ExRxExercise[] };
-export type ExerciseAnalysisProfile = {
-  key: "squat" | "press" | "hinge" | "lunge" | "pull" | "core" | "cardio" | "generic";
-  display: string;
-};
 
 export const exrx = dataset as ExRxDataset;
 
@@ -31,18 +27,6 @@ const byName = new Map(exrx.exercises.flatMap((e) => [[e.normalizedName, e], [e.
 export const normalizeExerciseName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 export const getExRxExercise = (name: string) => byName.get(normalizeExerciseName(name)) || byName.get(name.toLowerCase());
-
-export const getExRxExerciseNames = (): string[] => {
-  const seen = new Set<string>();
-  const names: string[] = [];
-  for (const item of exrx.exercises) {
-    const key = normalizeExerciseName(item.name);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    names.push(item.name);
-  }
-  return names;
-};
 
 const fallbackCues: Record<string, string[]> = {
   squat: ["Brace your core.", "Keep knees tracking over toes.", "Control the descent."],
@@ -60,37 +44,4 @@ export const synthesizeFeedbackCues = (name: string) => {
     .filter((s) => s.length > 18)
     .slice(0, 4);
   return cues.length ? cues : fallbackCues[normalizeExerciseName(name)] || ["Move with control.", "Maintain stable posture."];
-};
-
-const includesAny = (value: string, terms: string[]) => terms.some((term) => value.includes(term));
-
-export const getExerciseAnalysisProfile = (name: string): ExerciseAnalysisProfile => {
-  const normalized = normalizeExerciseName(name);
-  const ex = getExRxExercise(name);
-  const source = (ex?.source || []).join(" ").toLowerCase();
-  const classification = `${ex?.classification.utility || ""} ${ex?.classification.mechanics || ""} ${ex?.classification.force || ""}`.toLowerCase();
-  const corpus = `${normalized} ${source} ${classification}`;
-
-  if (includesAny(corpus, ["squat", "leg press", "step up", "step down"])) {
-    return { key: "squat", display: "Squat Pattern" };
-  }
-  if (includesAny(corpus, ["lunge", "split squat", "rear lunge"])) {
-    return { key: "lunge", display: "Lunge Pattern" };
-  }
-  if (includesAny(corpus, ["press", "push up", "dip"])) {
-    return { key: "press", display: "Press Pattern" };
-  }
-  if (includesAny(corpus, ["deadlift", "good morning", "hinge", "hyperextension"])) {
-    return { key: "hinge", display: "Hinge Pattern" };
-  }
-  if (includesAny(corpus, ["row", "pull", "curl up", "pulldown", "chin up"])) {
-    return { key: "pull", display: "Pull Pattern" };
-  }
-  if (includesAny(corpus, ["plank", "crunch", "oblique", "abdom", "core"])) {
-    return { key: "core", display: "Core Pattern" };
-  }
-  if (includesAny(corpus, ["run", "walk", "cycle", "cardio", "jump rope"])) {
-    return { key: "cardio", display: "Cardio Pattern" };
-  }
-  return { key: "generic", display: "General Pattern" };
 };
