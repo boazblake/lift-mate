@@ -17,7 +17,7 @@ const Layout = {
     const route = m.route.get();
     const title = vnode.attrs.title || TITLES[route] || "Lift Mate";
 
-    return [
+    return m("ion-app", [
       m(SideMenu),
       m("ion-page.app-shell", { id: "appShellContent" }, [
         m("ion-header", { class: "ion-no-border" }, [
@@ -33,7 +33,7 @@ const Layout = {
           m(Tabs),
         ]),
       ]),
-    ];
+    ]);
   },
 };
 

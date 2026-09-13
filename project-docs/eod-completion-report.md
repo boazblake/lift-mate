@@ -6,7 +6,7 @@ Date: 2026-05-14
 
 - Sidebar exercise selection is now the single exercise entry point and starts `/pose` with `autostart=1`.
 - Pose page no longer has a competing top-of-camera selector.
-- Legacy duplicated `src/exercises/*` processors were removed; runtime analysis uses one active path in `src/pages/Pose/holistic.service.ts`.
+- Legacy duplicated `src/exercises/*` processors were removed; runtime analysis now uses one active path in `src/features/pose/holistic.service.ts`.
 - Verified build integrity after these changes (`npm run buildweb` passes).
 
 ## Phase 2 - Data + UX Consistency

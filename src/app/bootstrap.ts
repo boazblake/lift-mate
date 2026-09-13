@@ -37,9 +37,32 @@ import "@ionic/core/css/display.css";
 /* Theme variables */
 // import "./theme/variables.css";
 
-defineCustomElements();
+const installErrorDiagnostics = () => {
+  if (!isDev) return;
 
-if (import.meta.env.DEV && "serviceWorker" in navigator) {
+  window.addEventListener("error", (event) => {
+    console.error("[LiftMate][window.error]", {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      stack: event.error?.stack,
+    });
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    console.error("[LiftMate][unhandledrejection]", {
+      message: reason?.message ?? String(reason),
+      stack: reason?.stack,
+      reason,
+    });
+  });
+};
+
+const isDev = Boolean((import.meta as any).env?.DEV);
+
+if (isDev && "serviceWorker" in navigator) {
   navigator.serviceWorker
     .getRegistrations()
     .then((registrations) =>
@@ -48,7 +71,7 @@ if (import.meta.env.DEV && "serviceWorker" in navigator) {
     .catch(() => undefined);
 }
 
-const root = document.body;
+const root = document.getElementById("app");
 let winW = window.innerWidth;
 
 const getDisplayType = (w: number): DisplayType => {
@@ -69,9 +92,16 @@ const checkWidth = (winW: number): number => {
   return requestAnimationFrame(() => checkWidth(winW));
 };
 
-(model as Model).settings.displayType = getDisplayType(winW);
+const start = async () => {
+  if (!root) throw new Error("Missing #app mount point");
 
-checkWidth(winW);
-m.route.prefix = "";
+  installErrorDiagnostics();
+  await defineCustomElements();
 
-m.route(root, "/", routes(model as Model));
+  (model as Model).settings.displayType = getDisplayType(winW);
+  checkWidth(winW);
+  m.route.prefix = "";
+  m.route(root, "/", routes());
+};
+
+void start();

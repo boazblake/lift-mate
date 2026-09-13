@@ -8,711 +8,161 @@
   <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/ionic.bundle.css">
   <style>
-    @import "https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/palettes/dark.always.css";
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #0d0d1a;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-    }
-
-    .phone-frame {
-      width: 390px;
-      height: 844px;
-      background: var(--ion-background-color, #1c1c2e);
-      border-radius: 44px;
-      overflow: hidden;
-      box-shadow: 0 0 0 12px #2d2d44, 0 0 0 14px #444, 0 20px 60px rgba(0,0,0,0.6);
-      position: relative;
-    }
-
-    .phone-notch {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 160px;
-      height: 30px;
-      background: #2d2d44;
-      border-radius: 0 0 18px 18px;
-      z-index: 100;
-    }
-
-    @media (max-width: 420px) {
-      body { align-items: stretch; background: var(--ion-background-color); }
-      .phone-frame {
-        width: 100%;
-        height: 100vh;
-        border-radius: 0;
-        box-shadow: none;
-      }
-      .phone-notch { display: none; }
-      .state-toggles { display: none !important; }
-    }
-
-    .content-area {
-      height: 100%;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      background: var(--ion-background-color, #1c1c2e);
-      position: relative;
-    }
-
-    /* === Camera Feed Area === */
-    .camera-hero {
-      position: relative;
-      width: 100%;
-      height: 65%;
-      background: #0a0a14;
-      overflow: hidden;
-    }
-
-    .camera-placeholder {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* Canvas overlay simulation */
-    .canvas-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .landmark-dot {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #00ff88;
-      box-shadow: 0 0 6px rgba(0,255,136,0.6);
-      transform: translate(-50%, -50%);
-    }
-
-    .landmark-line {
-      position: absolute;
-      height: 2px;
-      background: rgba(0,255,136,0.4);
-      transform-origin: 0 0;
-    }
-
-    /* Rep counter overlay */
-    .rep-counter {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      z-index: 15;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .rep-counter .reps-number {
-      font-size: 64px;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.6);
-      letter-spacing: -1px;
-    }
-    .rep-counter .reps-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.7);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.5);
-    }
-
-    /* Form feedback indicator */
-    .form-feedback {
-      position: absolute;
-      top: 60px;
-      right: 20px;
-      z-index: 15;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      backdrop-filter: blur(8px);
-      transition: all 0.3s ease;
-    }
-    .form-feedback.good {
-      background: rgba(0,255,136,0.2);
-      color: #00ff88;
-      box-shadow: 0 0 20px rgba(0,255,136,0.3);
-    }
-    .form-feedback.bad {
-      background: rgba(255,71,87,0.2);
-      color: #ff4757;
-      box-shadow: 0 0 20px rgba(255,71,87,0.3);
-    }
-    .form-feedback.neutral {
-      background: rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.6);
-    }
-
-    /* Recording indicator */
-    .recording-indicator {
-      position: absolute;
-      top: 60px;
-      left: 20px;
-      z-index: 15;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      background: rgba(255,71,87,0.2);
-      backdrop-filter: blur(8px);
-      font-size: 13px;
-      font-weight: 600;
-      color: #ff4757;
-    }
-    .recording-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ff4757;
-      animation: pulse-dot 1.2s ease-in-out infinite;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    /* Exercise selector */
-    .exercise-selector-bar {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 15;
-      width: 85%;
-    }
-    .exercise-selector-bar ion-select {
-      --background: rgba(0,0,0,0.6);
-      --placeholder-color: rgba(255,255,255,0.8);
-      --color: #fff;
-      backdrop-filter: blur(12px);
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    /* States overlay */
-    .state-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 8;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 16px;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-    }
-    .state-overlay.visible { display: flex; }
-
-    .state-overlay .state-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .state-overlay .state-sub {
-      font-size: 15px;
-      color: rgba(255,255,255,0.6);
-      text-align: center;
-      max-width: 260px;
-      line-height: 1.4;
-    }
-    .state-overlay .error-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: rgba(255,71,87,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .state-overlay .error-icon ion-icon {
-      font-size: 32px;
-      color: #ff4757;
-    }
-
-    /* Loading spinner overlay */
-    .loading-spinner-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-    .loading-spinner-container ion-spinner {
-      width: 48px;
-      height: 48px;
-      --color: #6c5ce7;
-    }
-    .loading-spinner-container .loading-text {
-      font-size: 14px;
-      color: rgba(255,255,255,0.7);
-      font-weight: 500;
-    }
-
-    /* Bottom controls area */
-    .controls-area {
-      padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: var(--ion-background-color, #1c1c2e);
-    }
-
-    .form-indicator-bar {
-      display: flex;
-      gap: 8px;
-    }
-    .form-indicator-item {
-      flex: 1;
-      padding: 10px;
-      border-radius: 12px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .form-indicator-item.good {
-      background: rgba(0,255,136,0.12);
-      color: #00ff88;
-      border: 1px solid rgba(0,255,136,0.2);
-    }
-    .form-indicator-item.bad {
-      background: rgba(255,71,87,0.12);
-      color: #ff4757;
-      border: 1px solid rgba(255,71,87,0.2);
-    }
-    .form-indicator-item.neutral {
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.4);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .exercise-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .exercise-info .ex-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--ion-text-color, #e8e8f0);
-    }
-    .exercise-info .ex-detail {
-      font-size: 13px;
-      color: var(--ion-color-medium, #8e8e93);
-    }
-
-    /* FAB row */
-    .fab-row {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      padding: 8px 0;
-    }
-    .fab-row ion-fab-button {
-      --box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-    }
-    ion-fab-button.active-toggle {
-      --background: #6c5ce7;
-      --background-activated: #5a4bd1;
-    }
-    ion-fab-button.inactive-toggle {
-      --background: rgba(255,255,255,0.12);
-      --background-activated: rgba(255,255,255,0.2);
-      --color: rgba(255,255,255,0.6);
-    }
-    ion-fab-button.camera-switch {
-      --background: rgba(255,255,255,0.12);
-      --background-activated: rgba(255,255,255,0.2);
-    }
-    ion-fab-button.record-btn {
-      --background: #ff4757;
-      --background-activated: #ff6b81;
-    }
-    ion-fab-button.record-btn-inactive {
-      --background: rgba(255,255,255,0.12);
-      --background-activated: rgba(255,255,255,0.2);
-      --color: #ff4757;
-    }
-
-    /* Start button overlay for idle / stopped */
-    .start-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 20;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.3);
-    }
-    .start-overlay.visible { display: flex; }
-    .start-overlay ion-fab-button {
-      width: 72px;
-      height: 72px;
-      --background: #6c5ce7;
-      --background-activated: #5a4bd1;
-      --box-shadow: 0 4px 24px rgba(108,92,231,0.5);
-    }
-    .start-overlay ion-fab-button ion-icon {
-      font-size: 32px;
-    }
-
-    /* State toggles (dev tool) */
-    .state-toggles {
-      position: fixed;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      z-index: 300;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(8px);
-      padding: 8px 14px;
-      border-radius: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .state-toggles button {
-      padding: 6px 14px;
-      border-radius: 16px;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .state-toggles button.active {
-      background: #6c5ce7;
-      color: #fff;
-    }
-    .state-toggles button:not(.active) {
-      background: rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.6);
-    }
-    .state-toggles button:not(.active):hover {
-      background: rgba(255,255,255,0.2);
-    }
-
-    .state-toggles + .phone-frame { margin-top: 70px; }
-
-    /* Error state specific */
-    .permission-error {
-      text-align: center;
-      padding: 0 40px;
-    }
-    .permission-error .permission-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .permission-error .permission-desc {
-      font-size: 14px;
-      color: rgba(255,255,255,0.6);
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
+    :root { --bg:#07111f; --surface:#10192d; --surface2:#172340; --border:rgba(255,255,255,.08); --text:#f4f7ff; --muted:#8f9bbd; --primary:#7b61ff; --success:#1fd1a4; --warning:#ffbf4d; --danger:#ff6b81; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; background: radial-gradient(circle at top,#182346 0,#07111f 48%,#050a12 100%); color:var(--text); }
+    .phone { width:390px; height:844px; border-radius:40px; overflow:hidden; background:linear-gradient(180deg,#09101e 0,#07111f 100%); position:relative; box-shadow:0 24px 80px rgba(0,0,0,.45), 0 0 0 12px rgba(255,255,255,.05); }
+    .content { height:100%; overflow:auto; }
+    .camera { position:relative; height:66%; background: linear-gradient(180deg, #080d18 0%, #111a2e 40%, #09121f 100%); overflow:hidden; }
+    .camera::before, .camera::after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.03); }
+    .camera::before { width:210px; height:210px; right:-40px; top:-40px; }
+    .camera::after { width:180px; height:180px; left:-50px; bottom:40px; }
+    .topbar { position:absolute; inset: 14px 14px auto; display:flex; justify-content:space-between; align-items:center; z-index:5; gap:10px; }
+    .selector, .status-pill, .chip, .dock button, .sheet { backdrop-filter: blur(14px); }
+    .selector { flex:1; min-width:0; display:flex; align-items:center; gap:8px; padding:12px 14px; border-radius:16px; background:rgba(0,0,0,.52); border:1px solid rgba(255,255,255,.08); }
+    .selector strong { font-size:14px; }
+    .selector span { color:rgba(255,255,255,.65); font-size:12px; }
+    .status-pill { padding:10px 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.06); font-size:12px; font-weight:700; color:#dfe6ff; }
+    .feed { position:absolute; inset:0; display:grid; place-items:center; }
+    .feed .grid { width:100%; height:100%; background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px); background-size: 44px 44px; opacity:.25; }
+    .figure { position:absolute; inset:0; display:grid; place-items:center; }
+    .figure svg { width: 320px; height: 420px; opacity:.9; filter: drop-shadow(0 0 12px rgba(123,97,255,.15)); }
+    .dot { fill: var(--success); filter: drop-shadow(0 0 6px rgba(31,209,164,.55)); }
+    .line { stroke: rgba(31,209,164,.5); stroke-width: 4; stroke-linecap: round; }
+    .rep { position:absolute; left:18px; bottom:20px; z-index:4; }
+    .rep .num { font-size:72px; line-height:.9; font-weight:900; letter-spacing:-.04em; text-shadow:0 4px 24px rgba(0,0,0,.55); }
+    .rep .label { font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.7); margin-top:4px; }
+    .right-stack { position:absolute; right:18px; top:64px; display:flex; flex-direction:column; gap:10px; z-index:4; }
+    .chip { padding:10px 12px; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.4); font-size:12px; font-weight:700; }
+    .chip.good { color:#6ff2c4; border-color:rgba(31,209,164,.18); background:rgba(31,209,164,.1); }
+    .chip.bad { color:#ff99a7; border-color:rgba(255,107,129,.18); background:rgba(255,107,129,.1); }
+    .chip.record { color:#ff97a4; border-color:rgba(255,107,129,.22); background:rgba(255,107,129,.12); }
+    .criteria { position:absolute; inset:auto 14px 12px; z-index:4; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .criterion { padding:10px 8px; border-radius:14px; background:rgba(8,13,24,.68); border:1px solid rgba(255,255,255,.06); text-align:center; font-size:11px; color:#c7d0ea; }
+    .criterion.good { color:#6ff2c4; border-color:rgba(31,209,164,.18); }
+    .criterion.bad { color:#ff99a7; border-color:rgba(255,107,129,.18); }
+    .criterion.neutral { color:#8b94b5; }
+    .dock { height:34%; padding:14px 16px 18px; background:linear-gradient(180deg,#0c1527 0,#09101e 100%); border-top:1px solid rgba(255,255,255,.05); display:flex; flex-direction:column; gap:12px; }
+    .info { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .info h2 { margin:0 0 2px; font-size:18px; }
+    .info p { margin:0; color:var(--muted); font-size:13px; line-height:1.4; }
+    .minirow { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .mini { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:10px 12px; }
+    .mini .value { font-size:20px; font-weight:800; }
+    .mini .label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:3px; }
+    .dock-row { display:flex; justify-content:center; gap:10px; align-items:center; }
+    .dock button { width:54px; height:54px; border-radius:18px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.06); color:#dfe5ff; display:grid; place-items:center; }
+    .dock button.active { background:rgba(123,97,255,.18); color:#d9d2ff; border-color:rgba(123,97,255,.25); }
+    .dock button.record { background:rgba(255,107,129,.16); color:#ffd1d8; border-color:rgba(255,107,129,.22); }
+    .dock button.start { width:74px; height:74px; border-radius:24px; background:linear-gradient(135deg,var(--primary),#9b8cff); color:#fff; box-shadow:0 18px 32px rgba(123,97,255,.25); }
+    .overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.46); backdrop-filter: blur(4px); z-index:8; }
+    .overlay.visible { display:flex; }
+    .overlay-card { width:min(320px, calc(100% - 40px)); border-radius:24px; background:rgba(12,18,32,.92); border:1px solid rgba(255,255,255,.08); padding:22px; text-align:center; }
+    .overlay-card h3 { margin:10px 0 6px; font-size:22px; }
+    .overlay-card p { margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+    .overlay-card .actions { margin-top:16px; display:flex; gap:10px; }
+    .overlay-card .actions a, .overlay-card .actions button { flex:1; min-height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700; border:0; }
+    .overlay-card .actions .primary { background:linear-gradient(135deg,var(--primary),#9b8cff); color:#fff; }
+    .overlay-card .actions .ghost { background:rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.08); }
+    .state-buttons { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); display:flex; gap:8px; flex-wrap:wrap; background:rgba(6,10,18,.9); border:1px solid rgba(255,255,255,.08); padding:8px; border-radius:999px; backdrop-filter:blur(16px); }
+    .state-buttons button { border:0; border-radius:999px; padding:8px 11px; background:rgba(255,255,255,.06); color:#d4dcf4; font-size:12px; font-weight:700; }
+    .state-buttons button.active { background:var(--primary); color:#fff; }
+    .spinner { width:48px; height:48px; border-radius:50%; border:4px solid rgba(255,255,255,.16); border-top-color:var(--primary); animation:spin 1s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .state-idle .overlay.idle, .state-loading .overlay.loading, .state-error .overlay.error, .state-summary .overlay.summary { display:flex; }
+    .state-summary .camera, .state-summary .dock { filter:saturate(.75) brightness(.72); }
+    .state-loading .criteria, .state-loading .dock-row, .state-loading .rep, .state-loading .right-stack { opacity:.35; }
+    @media (max-width:420px) { body { display:block; background:#07111f; } .phone { width:100%; height:100vh; border-radius:0; } .state-buttons { display:none; } }
   </style>
 </head>
-<body>
-  <div id="app">
-    <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="content-area" id="contentArea">
-        <div class="camera-hero" id="cameraHero">
-          <!-- Exercise Selector -->
-          <div class="exercise-selector-bar">
-            <ion-select interface="popover" placeholder="Select Exercise" value="squat" id="exerciseSelect">
-              <ion-select-option value="squat">Squat</ion-select-option>
-              <ion-select-option value="bench-press">Bench Press</ion-select-option>
-              <ion-select-option value="overhead-press">Overhead Press</ion-select-option>
-              <ion-select-option value="push-up">Push-up</ion-select-option>
-            </ion-select>
-          </div>
+<body class="state-idle">
+  <div class="phone">
+    <div class="content">
+      <section class="camera">
+        <div class="topbar">
+          <div class="selector"><ion-icon name="barbell"></ion-icon><div><strong>Squat</strong><div><span>Set 2 · 8 target reps</span></div></div></div>
+          <div class="status-pill">Ready to coach</div>
+        </div>
 
-          <!-- Camera placeholder image -->
-          <img class="camera-placeholder" id="cameraFeed" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='548' viewBox='0 0 390 548'%3E%3Crect width='390' height='548' fill='%231a1a2e'/%3E%3Cg opacity='0.15'%3E%3Ccircle cx='100' cy='150' r='60' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='290' cy='130' r='55' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='195' cy='300' r='60' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='195' cy='300' r='80' fill='none' stroke='%23fff' stroke-width='0.5'/%3E%3Cpath d='M100 150 L290 130 L195 300 Z' fill='none' stroke='%23fff' stroke-width='0.5'/%3E%3C/g%3E%3C/svg%3E" alt="Camera feed">
-
-          <!-- Canvas overlay with landmarks -->
-          <div class="canvas-overlay" id="canvasOverlay">
-            <!-- Pose landmarks -->
-            <div class="landmark-dot" style="left: 195px; top: 180px; width: 10px; height: 10px; background: #00ff88;"></div>
-            <div class="landmark-dot" style="left: 155px; top: 250px; background: #ffd93d;"></div>
-            <div class="landmark-dot" style="left: 235px; top: 250px; background: #ffd93d;"></div>
-            <div class="landmark-dot" style="left: 130px; top: 340px; background: #6c5ce7;"></div>
-            <div class="landmark-dot" style="left: 260px; top: 340px; background: #6c5ce7;"></div>
-            <div class="landmark-dot" style="left: 100px; top: 440px; background: #6c5ce7;"></div>
-            <div class="landmark-dot" style="left: 290px; top: 440px; background: #6c5ce7;"></div>
-            <!-- Connector lines -->
-            <div class="landmark-line" style="left: 195px; top: 180px; width: 60px; transform: rotate(30deg);"></div>
-            <div class="landmark-line" style="left: 195px; top: 180px; width: 60px; transform: rotate(-30deg);"></div>
-            <div class="landmark-line" style="left: 155px; top: 250px; width: 60px; transform: rotate(55deg);"></div>
-            <div class="landmark-line" style="left: 235px; top: 250px; width: 60px; transform: rotate(-55deg);"></div>
-            <div class="landmark-line" style="left: 130px; top: 340px; width: 50px; transform: rotate(80deg);"></div>
-            <div class="landmark-line" style="left: 260px; top: 340px; width: 50px; transform: rotate(-80deg);"></div>
-          </div>
-
-          <!-- Recording indicator -->
-          <div class="recording-indicator" id="recordingIndicator">
-            <div class="recording-dot"></div>
-            <span id="recordingTimer">00:23</span>
-          </div>
-
-          <!-- Form feedback -->
-          <div class="form-feedback good" id="formFeedback">
-            <ion-icon name="checkmark-circle"></ion-icon>
-            <span>Good form</span>
-          </div>
-
-          <!-- Rep counter -->
-          <div class="rep-counter">
-            <span class="reps-number" id="repCount">12</span>
-            <span class="reps-label">Reps</span>
-          </div>
-
-          <!-- Idle/Stopped start overlay -->
-          <div class="start-overlay" id="startOverlay">
-            <ion-fab-button onclick="alert('Starting camera...')">
-              <ion-icon name="play"></ion-icon>
-            </ion-fab-button>
-          </div>
-
-          <!-- Loading overlay -->
-          <div class="state-overlay" id="loadingOverlay">
-            <div class="loading-spinner-container">
-              <ion-spinner name="crescent"></ion-spinner>
-              <span class="loading-text">Initializing camera...</span>
-            </div>
-          </div>
-
-          <!-- Error overlay -->
-          <div class="state-overlay" id="errorOverlay">
-            <div class="error-icon">
-              <ion-icon name="videocam-off-outline"></ion-icon>
-            </div>
-            <div class="permission-error">
-              <div class="permission-title">Camera Permission Denied</div>
-              <div class="permission-desc">Lift-Mate needs camera access to analyze your form. Please enable it in your browser or device settings.</div>
-              <ion-button expand="block" fill="outline" style="--border-color: rgba(255,255,255,0.3); --color: #fff; --border-radius: 12px;">
-                <ion-icon name="settings-outline" slot="start"></ion-icon>
-                Open Settings
-              </ion-button>
-            </div>
+        <div class="feed">
+          <div class="grid"></div>
+          <div class="figure">
+            <svg viewBox="0 0 320 420" fill="none" aria-hidden="true">
+              <line class="line" x1="160" y1="74" x2="160" y2="158" />
+              <line class="line" x1="160" y1="104" x2="118" y2="138" />
+              <line class="line" x1="160" y1="104" x2="202" y2="138" />
+              <line class="line" x1="160" y1="158" x2="130" y2="220" />
+              <line class="line" x1="160" y1="158" x2="190" y2="220" />
+              <line class="line" x1="130" y1="220" x2="120" y2="312" />
+              <line class="line" x1="190" y1="220" x2="200" y2="312" />
+              <circle class="dot" cx="160" cy="66" r="8" />
+              <circle class="dot" cx="160" cy="102" r="7" />
+              <circle class="dot" cx="128" cy="136" r="6" />
+              <circle class="dot" cx="192" cy="136" r="6" />
+              <circle class="dot" cx="160" cy="158" r="7" />
+              <circle class="dot" cx="130" cy="220" r="7" />
+              <circle class="dot" cx="190" cy="220" r="7" />
+              <circle class="dot" cx="120" cy="312" r="7" />
+              <circle class="dot" cx="200" cy="312" r="7" />
+            </svg>
           </div>
         </div>
 
-        <!-- Controls area -->
-        <div class="controls-area" id="controlsArea">
-          <!-- Form detail indicators -->
-          <div class="form-indicator-bar">
-            <div class="form-indicator-item good">
-              <ion-icon name="checkmark-circle"></ion-icon>
-              <span>Depth</span>
-            </div>
-            <div class="form-indicator-item good">
-              <ion-icon name="checkmark-circle"></ion-icon>
-              <span>Back</span>
-            </div>
-            <div class="form-indicator-item bad">
-              <ion-icon name="close-circle"></ion-icon>
-              <span>Knees</span>
-            </div>
-            <div class="form-indicator-item neutral">
-              <ion-icon name="ellipse-outline"></ion-icon>
-              <span>Hips</span>
-            </div>
-          </div>
-
-          <!-- Exercise info -->
-          <div class="exercise-info">
-            <div>
-              <div class="ex-name">Squat</div>
-              <div class="ex-detail">Set 2 of 3</div>
-            </div>
-            <div style="text-align: right;">
-              <div class="ex-name" style="font-size: 20px;">12</div>
-              <div class="ex-detail">Target reps</div>
-            </div>
-          </div>
-
-          <!-- FAB row -->
-          <div class="fab-row">
-            <ion-fab-button class="active-toggle" size="small" onclick="toggleActive(this)">
-              <ion-icon name="body-outline"></ion-icon>
-            </ion-fab-button>
-            <ion-fab-button class="inactive-toggle" size="small" onclick="toggleActive(this)">
-              <ion-icon name="hand-left-outline"></ion-icon>
-            </ion-fab-button>
-            <ion-fab-button class="inactive-toggle" size="small" onclick="toggleActive(this)">
-              <ion-icon name="happy-outline"></ion-icon>
-            </ion-fab-button>
-            <ion-fab-button class="camera-switch" size="small" onclick="alert('Switching camera')">
-              <ion-icon name="camera-reverse-outline"></ion-icon>
-            </ion-fab-button>
-            <ion-fab-button class="record-btn" size="small" id="recordBtn" onclick="toggleRecording()">
-              <ion-icon name="stop-circle"></ion-icon>
-            </ion-fab-button>
-          </div>
+        <div class="rep"><div class="num">12</div><div class="label">Reps</div></div>
+        <div class="right-stack">
+          <div class="chip good">Depth is good</div>
+          <div class="chip">Camera: front</div>
+          <div class="chip record" id="recordChip" style="display:none;">Recording 00:58</div>
         </div>
-      </div>
-    </div>
+        <div class="criteria">
+          <div class="criterion good">Depth</div>
+          <div class="criterion good">Back</div>
+          <div class="criterion neutral">Knees</div>
+          <div class="criterion neutral">Tempo</div>
+        </div>
 
-    <!-- State toggles -->
-    <div class="state-toggles">
-      <button class="active" onclick="setState('streaming')">Streaming</button>
-      <button onclick="setState('idle')">Idle</button>
-      <button onclick="setState('loading')">Loading</button>
-      <button onclick="setState('error')">Error</button>
+        <div class="overlay idle visible"><div class="overlay-card"><ion-icon name="play-circle-outline" style="font-size:56px;color:#cfc6ff"></ion-icon><h3>Choose an exercise</h3><p>Start the camera when you are in position. Lift-Mate will count and coach the next rep.</p></div></div>
+        <div class="overlay loading"><div class="overlay-card"><div class="spinner"></div><h3>Initializing camera</h3><p>Loading the model and camera stream on device.</p></div></div>
+        <div class="overlay error"><div class="overlay-card"><ion-icon name="camera-off-outline" style="font-size:52px;color:#ff99a7"></ion-icon><h3>Camera blocked</h3><p>Allow camera access in system settings, then try again.</p><div class="actions"><a class="primary" href="#settings">Open settings</a><button class="ghost">Retry</button></div></div></div>
+        <div class="overlay summary"><div class="overlay-card" style="text-align:left; width:min(352px, calc(100% - 28px));"><div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;"><h3 style="margin:0;">Session summary</h3><ion-badge color="success">Saved locally</ion-badge></div><div class="minirow" style="margin-bottom:12px;"><div class="mini"><div class="value">24</div><div class="label">Reps</div></div><div class="mini"><div class="value">8:42</div><div class="label">Time</div></div><div class="mini"><div class="value">91</div><div class="label">Form</div></div></div><p style="margin:0 0 12px; color:var(--muted); line-height:1.5;">Depth stayed strong. Knees drifted on the last set. Save this clip and review it now.</p><div class="actions"><a class="primary" href="#review">Save &amp; Review</a><a class="ghost" href="#repeat">Repeat set</a></div></div></div>
+      </section>
+
+      <section class="dock">
+        <div class="info"><div><h2>Squat</h2><p>Keep the torso braced. Push through the floor.</p></div><ion-badge color="success">Good form</ion-badge></div>
+        <div class="minirow"><div class="mini"><div class="value">3/5</div><div class="label">Set</div></div><div class="mini"><div class="value">00:58</div><div class="label">Timer</div></div><div class="mini"><div class="value">2</div><div class="label">Flags</div></div></div>
+        <div class="dock-row">
+          <button class="active"><ion-icon name="body"></ion-icon></button>
+          <button class="active"><ion-icon name="hand-left-outline"></ion-icon></button>
+          <button class="active"><ion-icon name="happy-outline"></ion-icon></button>
+          <button><ion-icon name="camera-reverse-outline"></ion-icon></button>
+          <button class="record"><ion-icon name="radio-button-on-outline"></ion-icon></button>
+          <button class="start"><ion-icon name="play"></ion-icon></button>
+        </div>
+      </section>
     </div>
   </div>
 
+  <div class="state-buttons">
+    <button class="active" data-state="idle">Idle</button>
+    <button data-state="loading">Loading</button>
+    <button data-state="streaming">Streaming</button>
+    <button data-state="recording">Recording</button>
+    <button data-state="summary">Summary</button>
+    <button data-state="error">Error</button>
+  </div>
+
   <script>
-    let currentState = 'streaming';
-    let isRecording = true;
-
-    function setState(state) {
-      currentState = state;
-      const startOverlay = document.getElementById('startOverlay');
-      const loadingOverlay = document.getElementById('loadingOverlay');
-      const errorOverlay = document.getElementById('errorOverlay');
-      const canvasOverlay = document.getElementById('canvasOverlay');
-      const formFeedback = document.getElementById('formFeedback');
-      const recordingIndicator = document.getElementById('recordingIndicator');
-      const repCounter = document.querySelector('.rep-counter');
-      const controlsArea = document.getElementById('controlsArea');
-      const exerciseSelect = document.querySelector('.exercise-selector-bar');
-      const cameraImg = document.getElementById('cameraFeed');
-
-      startOverlay.classList.remove('visible');
-      loadingOverlay.classList.remove('visible');
-      errorOverlay.classList.remove('visible');
-      canvasOverlay.style.display = 'none';
-      formFeedback.style.display = 'none';
-      recordingIndicator.style.display = 'none';
-      repCounter.style.display = 'none';
-      controlsArea.style.display = 'none';
-      exerciseSelect.style.display = 'block';
-      cameraImg.style.opacity = '1';
-
-      if (state === 'streaming') {
-        canvasOverlay.style.display = 'block';
-        formFeedback.style.display = 'flex';
-        recordingIndicator.style.display = 'flex';
-        repCounter.style.display = 'flex';
-        controlsArea.style.display = 'flex';
-        formFeedback.className = 'form-feedback good';
-        formFeedback.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon><span>Good form</span>';
-      } else if (state === 'idle') {
-        startOverlay.classList.add('visible');
-        controlsArea.style.display = 'flex';
-        controlsArea.querySelector('.fab-row').style.display = 'none';
-        controlsArea.querySelector('.form-indicator-bar').style.display = 'none';
-        cameraImg.style.opacity = '0.5';
-      } else if (state === 'loading') {
-        loadingOverlay.classList.add('visible');
-        cameraImg.style.opacity = '0.4';
-        exerciseSelect.style.display = 'none';
-      } else if (state === 'error') {
-        errorOverlay.classList.add('visible');
-        cameraImg.style.opacity = '0.3';
-        exerciseSelect.style.display = 'none';
-      }
-
-      document.querySelectorAll('.state-toggles button').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-
-      // Reset controls visibility for idle
-      if (state !== 'idle') {
-        controlsArea.querySelector('.fab-row').style.display = '';
-        controlsArea.querySelector('.form-indicator-bar').style.display = '';
-      }
-    }
-
-    function toggleActive(btn) {
-      if (btn.classList.contains('active-toggle')) {
-        btn.classList.remove('active-toggle');
-        btn.classList.add('inactive-toggle');
-      } else {
-        btn.classList.remove('inactive-toggle');
-        btn.classList.add('active-toggle');
-      }
-    }
-
-    function toggleRecording() {
-      isRecording = !isRecording;
-      const btn = document.getElementById('recordBtn');
-      const indicator = document.getElementById('recordingIndicator');
-      if (isRecording) {
-        btn.className = 'record-btn';
-        btn.innerHTML = '<ion-icon name="stop-circle"></ion-icon>';
-        indicator.style.display = 'flex';
-      } else {
-        btn.className = 'record-btn-inactive';
-        btn.innerHTML = '<ion-icon name="radio-button-on-outline"></ion-icon>';
-        indicator.style.display = 'none';
-      }
-    }
-
-    // Toggle form feedback between good/bad on click
-    document.getElementById('formFeedback').addEventListener('click', function() {
-      if (this.classList.contains('good')) {
-        this.className = 'form-feedback bad';
-        this.innerHTML = '<ion-icon name="close-circle"></ion-icon><span>Bad form - knees caving</span>';
-      } else if (this.classList.contains('bad')) {
-        this.className = 'form-feedback neutral';
-        this.innerHTML = '<ion-icon name="ellipse-outline"></ion-icon><span>No pose detected</span>';
-      } else {
-        this.className = 'form-feedback good';
-        this.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon><span>Good form</span>';
-      }
-    });
-
-    // Simulate rep count increment
-    setInterval(() => {
-      if (currentState === 'streaming') {
-        const el = document.getElementById('repCount');
-        let val = parseInt(el.textContent);
-        if (val < 99) {
-          el.textContent = val + 1;
-        } else {
-          el.textContent = 0;
-        }
-      }
-    }, 3000);
+    const body = document.body;
+    const visible = (state) => document.querySelector('.overlay.' + state);
+    document.querySelectorAll('[data-state]').forEach((btn) => btn.addEventListener('click', () => {
+      const state = btn.getAttribute('data-state');
+      body.className = 'state-' + state;
+      document.querySelectorAll('[data-state]').forEach((b) => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.overlay').forEach((ov) => ov.classList.remove('visible'));
+      if (visible(state)) visible(state).classList.add('visible');
+      if (state === 'streaming' || state === 'recording') document.querySelector('.overlay.idle').classList.remove('visible');
+      document.getElementById('recordChip').style.display = state === 'recording' ? 'flex' : 'none';
+    }));
   </script>
 </body>
 </html>

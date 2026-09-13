@@ -48,6 +48,7 @@ const createSummaryDraft = () => {
 let isSavingSummary = false;
 let isStartingSession = false;
 let shouldAutoStart = false;
+let previousShellBackground = "";
 
 const startSession = async () => {
   const hasExercise = Boolean(exercise()?.meta?.name);
@@ -93,6 +94,13 @@ const PoseViewer: m.Component = {
   oncreate: ({ dom }) => {
     elements.video(dom.querySelector("video"));
     elements.canvas(dom.querySelector("canvas"));
+    if (Capacitor.getPlatform() !== "web") {
+      const shellMain = document.querySelector(".app-shell-main");
+      if (shellMain instanceof HTMLElement) {
+        previousShellBackground = shellMain.style.background;
+        shellMain.style.background = "transparent";
+      }
+    }
     if (shouldAutoStart && exercise()?.meta?.name) {
       shouldAutoStart = false;
       setTimeout(() => {
@@ -102,6 +110,12 @@ const PoseViewer: m.Component = {
   },
 
   onremove: async () => {
+    if (Capacitor.getPlatform() !== "web") {
+      const shellMain = document.querySelector(".app-shell-main");
+      if (shellMain instanceof HTMLElement) {
+        shellMain.style.background = previousShellBackground || "";
+      }
+    }
     renderService.stopLoop();
     await cameraService.stop();
     await holisticService.close();
@@ -121,7 +135,10 @@ const PoseViewer: m.Component = {
 
     return m(
       "section#video-feed.pose-viewer",
-      { style: { position: "relative", width: "100%", height: "100%" } },
+      {
+        class: isWeb ? "" : "pose-native-preview",
+        style: { position: "relative", width: "100%", height: "100%" },
+      },
       [
         m("ion-note", { style: "position:absolute; top: 8px; left: 12px; z-index: 26; color: #d7d7d7;" }, "Step 2: Train"),
         m(

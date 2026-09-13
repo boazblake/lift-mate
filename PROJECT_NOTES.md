@@ -44,12 +44,12 @@ Single source of truth for product direction, agent outputs, and execution statu
 - Progress updates from local data after session save.
 
 ## Session Notes (2026-05-12)
-- Added route guard helper: `src/utils/navigationGuards.ts`.
-- Wired guard into `src/components/Tabs.js` and `src/components/SideMenu.js`.
+- Added route guard helper: `src/shared/utils/navigationGuards.ts`.
+- Wired guard into `src/shared/components/Tabs.js` and `src/shared/components/SideMenu.js`.
 - When leaving active Exercise states (`Loading`, `Ready`, `Streaming`, `SwitchingCamera`), app now asks for confirmation.
 - Replaced browser `window.confirm` with native-style `ion-alert` confirmation for active Exercise leave flow.
 - Verified project builds after changes (`npm run buildweb`).
-- Replaced Exercise start FAB with a guided preflight card state in `src/pages/Pose/PoseViewer.ts`.
-- Added explicit loading overlay copy ("Starting camera...") and styling in `src/pages/Pose/pose.css`.
-- Added Home CTA hierarchy enhancement in `src/pages/Home.ts`: Start, Resume, and Recent session shortcut to Playback.
+- Replaced Exercise start FAB with a guided preflight card state in `src/features/pose/PoseViewer.ts`.
+- Added explicit loading overlay copy ("Starting camera...") and styling in `src/features/pose/pose.css`.
+- Added Home CTA hierarchy enhancement in `src/features/home/HomePage.ts`: Start, Resume, and Recent session shortcut to Playback.
 - Added Recent Sessions list on Home from `src/stores/sessionStore.ts` data.

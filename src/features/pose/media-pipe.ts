@@ -1,4 +1,5 @@
-import { registerPlugin, PluginListenerHandle } from "@capacitor/core";
+import type { PluginListenerHandle } from "@capacitor/core";
+import { CapacitorMediaPipe as NativeCapacitorMediaPipe } from "capacitor-media-pipe";
 
 // Define the TypeScript interface for our native plugin
 export interface CapacitorMediaPipePlugin {
@@ -7,8 +8,17 @@ export interface CapacitorMediaPipePlugin {
     smoothLandmarks?: boolean;
     minDetectionConfidence?: number;
     minTrackingConfidence?: number;
+    holisticModel?: string;
+    holisticModelUrl?: string;
+    model?: string;
   }): Promise<void>;
-  send(options: { image: string }): Promise<void>;
+  send(options: {
+    image: string;
+    width?: number;
+    height?: number;
+    rotationDegrees?: number;
+    isMirrored?: boolean;
+  }): Promise<void>;
   close(): Promise<void>;
   addListener(
     eventName: "holisticResults",
@@ -16,9 +26,4 @@ export interface CapacitorMediaPipePlugin {
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 }
 
-// Register the plugin with Capacitor
-const CapacitorMediaPipe = registerPlugin<CapacitorMediaPipePlugin>(
-  "CapacitorMediaPipe"
-);
-
-export default CapacitorMediaPipe;
+export default NativeCapacitorMediaPipe as CapacitorMediaPipePlugin;

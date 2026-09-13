@@ -82,6 +82,7 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias,
+      dedupe: ["@capacitor/core"],
     },
     build: {
       outDir: "docs",

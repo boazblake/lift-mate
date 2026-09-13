@@ -25,6 +25,60 @@ let pressDownFrames = 0;
 let pressUpFrames = 0;
 let lastRepAtMs = 0;
 let isFrameLoopRunning = false;
+let nativeLogCounter = 0;
+let lastNativeFrameSentAt = 0;
+
+const NATIVE_FRAME_INTERVAL_MS = 1000 / 12;
+const NATIVE_CAPTURE_QUALITY = 35;
+
+const asArray = (value: any): any[] => (Array.isArray(value) ? value : []);
+const asLandmarkArray = (value: any): any[] => {
+  const arr = asArray(value);
+  if (!arr.length) return [];
+  const first = arr[0];
+  return typeof first?.x === "number" && typeof first?.y === "number" ? arr : [];
+};
+
+const pickLandmarks = (source: any, keys: string[]): any[] => {
+  for (const key of keys) {
+    const direct = asLandmarkArray(source?.[key]);
+    if (direct.length) return direct;
+    const nested = asArray(source?.[key]);
+    if (!nested.length) continue;
+    const first = asLandmarkArray(nested[0]);
+    if (first.length) return first;
+  }
+  return [];
+};
+
+const normalizeNativeResults = (results: any) => {
+  const payload = results?.data ?? results ?? {};
+  const poseLandmarks = pickLandmarks(payload, ["poseLandmarks", "pose_landmarks", "multiPoseLandmarks"]);
+  const faceLandmarks = pickLandmarks(payload, ["faceLandmarks", "face_landmarks", "multiFaceLandmarks"]);
+
+  let leftHandLandmarks = pickLandmarks(payload, ["leftHandLandmarks", "left_hand_landmarks"]);
+  let rightHandLandmarks = pickLandmarks(payload, ["rightHandLandmarks", "right_hand_landmarks"]);
+
+  if (!leftHandLandmarks.length && !rightHandLandmarks.length) {
+    const hands = asArray(payload.handLandmarks);
+    const handednesses = asArray(payload.handednesses);
+    handednesses.forEach((side: any, index: number) => {
+      const label = String(side?.[0]?.categoryName || side?.label || "").toLowerCase();
+      const points = asLandmarkArray(hands[index]);
+      if (!points.length) return;
+      if (label.includes("left")) leftHandLandmarks = points;
+      if (label.includes("right")) rightHandLandmarks = points;
+    });
+  }
+
+  if (!leftHandLandmarks.length && !rightHandLandmarks.length) {
+    const multiHands = asArray(payload.multiHandLandmarks);
+    if (multiHands.length > 0) leftHandLandmarks = asLandmarkArray(multiHands[0]);
+    if (multiHands.length > 1) rightHandLandmarks = asLandmarkArray(multiHands[1]);
+  }
+
+  return { poseLandmarks, faceLandmarks, leftHandLandmarks, rightHandLandmarks };
+};
 
 const redrawPoseUi = () => {
   const now = performance.now();
@@ -306,10 +360,20 @@ const sendFrames = async () => {
       coaching(analyzePose(currentHolisticData.poseLandmarks));
       redrawPoseUi();
     } else if (!isSendingNativeFrame) {
+      const now = performance.now();
+      if (now - lastNativeFrameSentAt < NATIVE_FRAME_INTERVAL_MS) {
+        if (isFrameLoopRunning) requestAnimationFrame(sendFrames);
+        return;
+      }
+      lastNativeFrameSentAt = now;
       isSendingNativeFrame = true;
-      const frame = await CameraPreview.captureSample({ quality: 50 });
+      const frame = await CameraPreview.captureSample({ quality: NATIVE_CAPTURE_QUALITY });
       if (frame?.value) {
-        await CapacitorMediaPipe.send({ image: frame.value });
+        await CapacitorMediaPipe.send({
+          image: frame.value,
+          rotationDegrees: 0,
+          isMirrored: false,
+        });
       }
       isSendingNativeFrame = false;
     }
@@ -332,14 +396,22 @@ export const holisticService = {
           smoothLandmarks: options.smoothLandmarks ?? true,
           minDetectionConfidence: options.minDetectionConfidence || 0.5,
           minTrackingConfidence: options.minTrackingConfidence || 0.5,
+          holisticModel: "holistic_landmarker.task",
+          holisticModelUrl: "https://storage.googleapis.com/mediapipe-models/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task",
         });
         CapacitorMediaPipe.addListener("holisticResults", (results) => {
-          const next = {
-            poseLandmarks: results.poseLandmarks || [],
-            faceLandmarks: results.faceLandmarks || [],
-            leftHandLandmarks: results.leftHandLandmarks || [],
-            rightHandLandmarks: results.rightHandLandmarks || [],
-          };
+          const next = normalizeNativeResults(results);
+          nativeLogCounter += 1;
+          if (nativeLogCounter <= 5 || nativeLogCounter % 60 === 0) {
+            const payload = results?.data ?? results ?? {};
+            console.info("[LiftMate][NativeMP] payload keys", Object.keys(payload));
+            console.info("[LiftMate][NativeMP] landmark counts", {
+              pose: next.poseLandmarks.length,
+              face: next.faceLandmarks.length,
+              leftHand: next.leftHandLandmarks.length,
+              rightHand: next.rightHandLandmarks.length,
+            });
+          }
           holistic.data(next);
           coaching(analyzePose(next.poseLandmarks));
           redrawPoseUi();
@@ -359,11 +431,13 @@ export const holisticService = {
   startFrameLoop: () => {
     if (isFrameLoopRunning) return;
     isFrameLoopRunning = true;
+    lastNativeFrameSentAt = 0;
     requestAnimationFrame(sendFrames);
   },
 
   close: async () => {
     isFrameLoopRunning = false;
+    lastNativeFrameSentAt = 0;
     if (platform === "web") {
       if (poseLandmarker) await poseLandmarker.close();
       if (faceLandmarker) await faceLandmarker.close();

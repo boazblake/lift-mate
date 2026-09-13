@@ -14,7 +14,7 @@ The plugin is responsible for:
 
 ## Inferred API
 
-Based on its usage in `src/pages/Pose/holistic.service.ts`, the plugin exposes the following methods and events:
+Based on its usage in `src/features/pose/holistic.service.ts`, the plugin exposes the following methods and events:
 
 ### Methods
 

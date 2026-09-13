@@ -9,6 +9,10 @@
   background: #111;
 }
 
+.pose-viewer.pose-native-preview {
+  background: transparent;
+}
+
 .pose-viewer canvas {
   pointer-events: none;
 }
