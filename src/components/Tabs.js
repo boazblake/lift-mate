@@ -1,7 +1,15 @@
 import m from "mithril";
 
+const tabs = [
+  { route: "/", icon: "home", label: "Home" },
+  { route: "/pose", icon: "barbell", label: "Exercise" },
+  { route: "/playback", icon: "refresh-outline", label: "Review" },
+  { route: "/progress", icon: "stats-chart", label: "Progress" },
+];
+
 const Tabs = {
   view: ({ children }) => {
+    const activeRoute = m.route.get();
     return m("ion-tabs", [
       m(
         "ion-content",
@@ -11,24 +19,17 @@ const Tabs = {
         },
         children
       ),
-      m("ion-tab-bar", { slot: "bottom" }, [
-        m("ion-tab-button", { onclick: () => m.route.set("/") }, [
-          m("ion-icon", { name: "home" }),
-          m("ion-label", "Home"),
-        ]),
-        m("ion-tab-button", { onclick: () => m.route.set("/pose") }, [
-          m("ion-icon", { name: "barbell" }),
-          m("ion-label", "Exercise"),
-        ]),
-        m("ion-tab-button", { onclick: () => m.route.set("/playback") }, [
-          m("ion-icon", { name: "refresh-outline" }),
-          m("ion-label", "Exercise Review"),
-        ]),
-        m("ion-tab-button", { onclick: () => m.route.set("/progress") }, [
-          m("ion-icon", { name: "stats-chart" }),
-          m("ion-label", "Progress"),
-        ]),
-      ]),
+      m("ion-tab-bar", { slot: "bottom" },
+        tabs.map((tab) =>
+          m("ion-tab-button", {
+            class: activeRoute === tab.route ? "tab-selected" : "",
+            onclick: () => m.route.set(tab.route),
+          }, [
+            m("ion-icon", { name: tab.icon }),
+            m("ion-label", tab.label),
+          ])
+        )
+      ),
     ]);
   },
 };

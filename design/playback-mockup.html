@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lift-Mate — Playback Mockup</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/dist/ionic/ionic.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/ionic.bundle.css">
+  <style>
+    @import "https://cdn.jsdelivr.net/npm/@ionic/core@8.4.3/css/palettes/dark.always.css";
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: var(--ion-background-color, #1c1c2e);
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow: 0 0 0 12px #2d2d44, 0 0 0 14px #444, 0 20px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 30px;
+      background: #2d2d44;
+      border-radius: 0 0 18px 18px;
+      z-index: 100;
+    }
+
+    @media (max-width: 420px) {
+      body { align-items: stretch; background: var(--ion-background-color); }
+      .phone-frame {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .phone-notch { display: none; }
+      .state-toggles { display: none !important; }
+    }
+
+    .content-area {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--ion-background-color, #1c1c2e);
+    }
+
+    /* Page header */
+    .page-header {
+      padding: 20px 20px 12px;
+      background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -15%;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      position: relative;
+      z-index: 1;
+    }
+    .page-header p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Recording list */
+    .recording-list {
+      padding: 16px 20px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .recording-card {
+      background: var(--ion-color-step-50, #2a2a40);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .recording-card:active { transform: scale(0.98); }
+
+    .recording-card-top {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .recording-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      overflow: hidden;
+    }
+    .recording-thumb .thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .recording-thumb ion-icon {
+      font-size: 28px;
+      color: rgba(255,255,255,0.3);
+    }
+    .recording-thumb svg {
+      width: 100%;
+      height: 100%;
+      opacity: 0.15;
+    }
+
+    .recording-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .recording-info .rec-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-text-color, #e8e8f0);
+      margin-bottom: 2px;
+    }
+    .recording-info .rec-date {
+      font-size: 13px;
+      color: var(--ion-color-medium, #8e8e93);
+      margin-bottom: 6px;
+    }
+    .recording-info .rec-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+    .recording-info .rec-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .recording-info .rec-meta ion-icon {
+      font-size: 14px;
+    }
+
+    .recording-card-bottom {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .recording-card-bottom .rec-sets {
+      font-size: 12px;
+      color: var(--ion-color-medium, #8e8e93);
+    }
+    .recording-card-bottom .rec-play-btn {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6c5ce7;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px 100px;
+      text-align: center;
+    }
+    .empty-state.visible { display: flex; }
+    .empty-state.visible ~ .recording-list { display: none; }
+
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--ion-color-step-50, #2a2a40);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .empty-state-icon ion-icon { font-size: 48px; color: var(--ion-color-medium, #8e8e93); }
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ion-text-color, #e8e8f0);
+      margin-bottom: 6px;
+    }
+    .empty-state p {
+      font-size: 15px;
+      color: var(--ion-color-medium, #8e8e93);
+      line-height: 1.5;
+      max-width: 280px;
+      margin-bottom: 24px;
+    }
+
+    /* Player view (full-screen canvas when playing) */
+    .player-view {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: #0a0a14;
+      flex-direction: column;
+    }
+    .player-view.visible {
+      display: flex;
+    }
+
+    .player-canvas-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .player-canvas-container .player-placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0.4;
+    }
+
+    /* Player overlay landmarks */
+    .player-landmarks {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .player-landmarks .lm-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .player-landmarks .lm-line {
+      position: absolute;
+      height: 2px;
+      transform-origin: 0 0;
+    }
+
+    /* Timeline scrubber */
+    .player-timeline {
+      padding: 12px 20px 8px;
+      background: rgba(0,0,0,0.6);
+    }
+    .player-timeline input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2);
+      outline: none;
+    }
+    .player-timeline input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6c5ce7;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(108,92,231,0.5);
+    }
+    .player-timeline input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6c5ce7;
+      cursor: pointer;
+      border: none;
+    }
+    .player-timeline .timeline-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+
+    /* Player controls */
+    .player-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 12px 20px 24px;
+      background: rgba(0,0,0,0.6);
+    }
+    .player-controls button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.7);
+      transition: color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .player-controls button:active { transform: scale(0.9); }
+    .player-controls button:hover { color: #fff; }
+    .player-controls button .ctrl-icon {
+      font-size: 28px;
+    }
+    .player-controls button.play-pause .ctrl-icon {
+      font-size: 44px;
+      color: #fff;
+    }
+    .player-controls button.settings-btn {
+      position: absolute;
+      right: 20px;
+    }
+    .player-controls button.close-btn {
+      position: absolute;
+      left: 20px;
+    }
+
+    /* Close button in player */
+    .player-header-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 60;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Settings modal */
+    .modal-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.visible { display: block; }
+
+    .modal-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--ion-background-color, #1c1c2e);
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+      animation: slideUp 0.3s ease;
+      max-height: 70%;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--ion-color-medium-shade, #555);
+      margin: 0 auto 16px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ion-text-color, #e8e8f0);
+      margin-bottom: 20px;
+    }
+    .modal-section {
+      margin-bottom: 20px;
+    }
+    .modal-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ion-color-medium, #8e8e93);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .speed-grid {
+      display: flex;
+      gap: 10px;
+    }
+    .speed-option {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--ion-color-step-50, #2a2a40);
+      text-align: center;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ion-color-medium, #8e8e93);
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .speed-option.selected {
+      border-color: #6c5ce7;
+      background: rgba(108,92,231,0.15);
+      color: #6c5ce7;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .toggle-row label {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ion-text-color, #e8e8f0);
+    }
+
+    /* FAB for delete */
+    ion-fab-button.danger-fab {
+      --background: #ff4757;
+      --background-activated: #ff6b81;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* State toggles */
+    .state-toggles {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 300;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 24px;
+    }
+    .state-toggles button {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .state-toggles button.active {
+      background: #6c5ce7;
+      color: #fff;
+    }
+    .state-toggles button:not(.active) {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6);
+    }
+    .state-toggles button:not(.active):hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .state-toggles + .phone-frame { margin-top: 70px; }
+
+    /* custom toggle styling */
+    .custom-toggle {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      cursor: pointer;
+    }
+    .custom-toggle input { display: none; }
+    .custom-toggle .toggle-track {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.15);
+      transition: background 0.2s;
+    }
+    .custom-toggle input:checked + .toggle-track {
+      background: #6c5ce7;
+    }
+    .custom-toggle .toggle-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .custom-toggle input:checked + .toggle-track .toggle-knob {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="content-area" id="contentArea">
+        <!-- Page Header -->
+        <div class="page-header">
+          <h1>Exercise Review</h1>
+          <p>Your recorded sessions</p>
+        </div>
+
+        <!-- Normal: Recording List -->
+        <div id="normalState">
+          <div class="recording-list">
+            <div class="recording-card" onclick="openPlayer('Squat')">
+              <div class="recording-card-top">
+                <div class="recording-thumb">
+                  <svg viewBox="0 0 80 80">
+                    <circle cx="40" cy="25" r="12" fill="none" stroke="#6c5ce7" stroke-width="1.5"/>
+                    <path d="M20 70 L30 45 L40 50 L50 45 L60 70" fill="none" stroke="#6c5ce7" stroke-width="1.5"/>
+                    <line x1="30" y1="45" x2="25" y2="55" stroke="#6c5ce7" stroke-width="1"/>
+                    <line x1="50" y1="45" x2="55" y2="55" stroke="#6c5ce7" stroke-width="1"/>
+                    <line x1="40" y1="37" x2="40" y2="50" stroke="#6c5ce7" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="recording-info">
+                  <div class="rec-name">Squat</div>
+                  <div class="rec-date">Today, 2:30 PM</div>
+                  <div class="rec-meta">
+                    <span><ion-icon name="time-outline"></ion-icon> 4:32</span>
+                    <span><ion-icon name="repeat-outline"></ion-icon> 15 reps</span>
+                    <span><ion-icon name="checkmark-circle-outline"></ion-icon> 92% form</span>
+                  </div>
+                </div>
+              </div>
+              <div class="recording-card-bottom">
+                <span class="rec-sets">3 sets total</span>
+                <span class="rec-play-btn">
+                  <ion-icon name="play-circle"></ion-icon> Play
+                </span>
+              </div>
+            </div>
+
+            <div class="recording-card" onclick="openPlayer('Bench Press')">
+              <div class="recording-card-top">
+                <div class="recording-thumb">
+                  <svg viewBox="0 0 80 80">
+                    <rect x="15" y="35" width="50" height="6" rx="3" fill="none" stroke="#a29bfe" stroke-width="1.5"/>
+                    <line x1="15" y1="38" x2="15" y2="65" stroke="#a29bfe" stroke-width="1.5"/>
+                    <line x1="65" y1="38" x2="65" y2="65" stroke="#a29bfe" stroke-width="1.5"/>
+                    <circle cx="40" cy="20" r="12" fill="none" stroke="#a29bfe" stroke-width="1.5"/>
+                    <line x1="28" y1="30" x2="15" y2="35" stroke="#a29bfe" stroke-width="1"/>
+                    <line x1="52" y1="30" x2="65" y2="35" stroke="#a29bfe" stroke-width="1"/>
+                  </svg>
+                </div>
+                <div class="recording-info">
+                  <div class="rec-name">Bench Press</div>
+                  <div class="rec-date">Yesterday, 6:15 PM</div>
+                  <div class="rec-meta">
+                    <span><ion-icon name="time-outline"></ion-icon> 3:48</span>
+                    <span><ion-icon name="repeat-outline"></ion-icon> 12 reps</span>
+                    <span><ion-icon name="checkmark-circle-outline"></ion-icon> 88% form</span>
+                  </div>
+                </div>
+              </div>
+              <div class="recording-card-bottom">
+                <span class="rec-sets">2 sets total</span>
+                <span class="rec-play-btn">
+                  <ion-icon name="play-circle"></ion-icon> Play
+                </span>
+              </div>
+            </div>
+
+            <div class="recording-card" onclick="openPlayer('Overhead Press')">
+              <div class="recording-card-top">
+                <div class="recording-thumb">
+                  <svg viewBox="0 0 80 80">
+                    <circle cx="40" cy="25" r="12" fill="none" stroke="#fdcb6e" stroke-width="1.5"/>
+                    <line x1="40" y1="37" x2="40" y2="50" stroke="#fdcb6e" stroke-width="1.5"/>
+                    <line x1="40" y1="42" x2="25" y2="55" stroke="#fdcb6e" stroke-width="1"/>
+                    <line x1="40" y1="42" x2="55" y2="55" stroke="#fdcb6e" stroke-width="1"/>
+                    <line x1="30" y1="20" x2="20" y2="10" stroke="#fdcb6e" stroke-width="1.5"/>
+                    <line x1="50" y1="20" x2="60" y2="10" stroke="#fdcb6e" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="recording-info">
+                  <div class="rec-name">Overhead Press</div>
+                  <div class="rec-date">3 days ago, 9:00 AM</div>
+                  <div class="rec-meta">
+                    <span><ion-icon name="time-outline"></ion-icon> 2:15</span>
+                    <span><ion-icon name="repeat-outline"></ion-icon> 10 reps</span>
+                    <span><ion-icon name="checkmark-circle-outline"></ion-icon> 76% form</span>
+                  </div>
+                </div>
+              </div>
+              <div class="recording-card-bottom">
+                <span class="rec-sets">2 sets total</span>
+                <span class="rec-play-btn">
+                  <ion-icon name="play-circle"></ion-icon> Play
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">
+            <ion-icon name="videocam-outline"></ion-icon>
+          </div>
+          <h2>No recordings yet</h2>
+          <p>Complete an exercise to see it here. Record your sets to review your form later.</p>
+          <ion-button expand="block" style="max-width: 260px; --background: #6c5ce7; --border-radius: 12px; font-weight: 600; height: 50px;" onclick="alert('Navigate to Exercise tab')">
+            <ion-icon name="barbell-outline" slot="start"></ion-icon>
+            Start Exercise
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- FAB (delete visible when recordings exist) -->
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="margin-bottom: 16px; margin-right: 16px; z-index: 40;" id="deleteFab">
+        <ion-fab-button class="danger-fab" onclick="confirmDelete()">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+
+      <!-- Player View -->
+      <div class="player-view" id="playerView">
+        <button class="player-header-close" onclick="closePlayer()">
+          <ion-icon name="close"></ion-icon>
+        </button>
+        <div class="player-canvas-container">
+          <svg class="player-placeholder" viewBox="0 0 390 548">
+            <rect width="390" height="548" fill="#0a0a14"/>
+            <g opacity="0.08">
+              <circle cx="195" cy="180" r="80" fill="none" stroke="#fff" stroke-width="0.5"/>
+              <circle cx="195" cy="300" r="60" fill="none" stroke="#fff" stroke-width="0.5"/>
+              <circle cx="195" cy="300" r="100" fill="none" stroke="#fff" stroke-width="0.3"/>
+              <line x1="195" y1="180" x2="155" y2="260" stroke="#fff" stroke-width="0.3"/>
+              <line x1="195" y1="180" x2="235" y2="260" stroke="#fff" stroke-width="0.3"/>
+              <line x1="155" y1="260" x2="115" y2="370" stroke="#fff" stroke-width="0.3"/>
+              <line x1="235" y1="260" x2="275" y2="370" stroke="#fff" stroke-width="0.3"/>
+            </g>
+          </svg>
+          <div class="player-landmarks" id="playerLandmarks">
+            <div class="lm-dot" style="left: 195px; top: 180px; width: 8px; height: 8px; background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.6);"></div>
+            <div class="lm-dot" style="left: 155px; top: 260px; background: #ffd93d; box-shadow: 0 0 4px rgba(255,217,61,0.4);"></div>
+            <div class="lm-dot" style="left: 235px; top: 260px; background: #ffd93d; box-shadow: 0 0 4px rgba(255,217,61,0.4);"></div>
+            <div class="lm-dot" style="left: 115px; top: 370px; background: #6c5ce7; box-shadow: 0 0 4px rgba(108,92,231,0.4);"></div>
+            <div class="lm-dot" style="left: 275px; top: 370px; background: #6c5ce7; box-shadow: 0 0 4px rgba(108,92,231,0.4);"></div>
+            <div class="lm-line" style="left: 195px; top: 180px; width: 64px; background: rgba(0,255,136,0.3); transform: rotate(38deg);"></div>
+            <div class="lm-line" style="left: 195px; top: 180px; width: 64px; background: rgba(0,255,136,0.3); transform: rotate(-38deg);"></div>
+            <div class="lm-line" style="left: 155px; top: 260px; width: 74px; background: rgba(108,92,231,0.3); transform: rotate(48deg);"></div>
+            <div class="lm-line" style="left: 235px; top: 260px; width: 74px; background: rgba(108,92,231,0.3); transform: rotate(-48deg);"></div>
+          </div>
+        </div>
+
+        <!-- Timeline scrubber -->
+        <div class="player-timeline">
+          <input type="range" min="0" max="100" value="35" id="timelineSlider">
+          <div class="timeline-labels">
+            <span>00:00</span>
+            <span id="currentTime">00:14</span>
+            <span>00:32</span>
+          </div>
+        </div>
+
+        <!-- Playback controls -->
+        <div class="player-controls" style="position: relative;">
+          <button class="close-btn" onclick="closePlayer()">
+            <ion-icon name="chevron-down" class="ctrl-icon"></ion-icon>
+          </button>
+          <button onclick="prevFrame()">
+            <ion-icon name="play-skip-back" class="ctrl-icon"></ion-icon>
+          </button>
+          <button class="play-pause" onclick="togglePlayPause()">
+            <ion-icon name="pause" class="ctrl-icon" id="playPauseIcon"></ion-icon>
+          </button>
+          <button onclick="nextFrame()">
+            <ion-icon name="play-skip-forward" class="ctrl-icon"></ion-icon>
+          </button>
+          <button class="settings-btn" onclick="openSettings()">
+            <ion-icon name="settings-outline" class="ctrl-icon"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Settings Modal -->
+      <div class="modal-overlay" id="settingsModal" onclick="closeSettings(event)">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div class="modal-title">Playback Settings</div>
+
+          <div class="modal-section">
+            <div class="modal-section-title">Playback Speed</div>
+            <div class="speed-grid">
+              <div class="speed-option" onclick="selectSpeed(this, 0.5)">0.5x</div>
+              <div class="speed-option selected" onclick="selectSpeed(this, 1)">1x</div>
+              <div class="speed-option" onclick="selectSpeed(this, 1.5)">1.5x</div>
+              <div class="speed-option" onclick="selectSpeed(this, 2)">2x</div>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <div class="modal-section-title">Landmark Display</div>
+            <div class="toggle-row">
+              <label>Pose Landmarks</label>
+              <label class="custom-toggle">
+                <input type="checkbox" checked>
+                <div class="toggle-track"><div class="toggle-knob"></div></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <label>Hand Landmarks</label>
+              <label class="custom-toggle">
+                <input type="checkbox" checked>
+                <div class="toggle-track"><div class="toggle-knob"></div></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <label>Face Mesh</label>
+              <label class="custom-toggle">
+                <input type="checkbox">
+                <div class="toggle-track"><div class="toggle-knob"></div></div>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <label>Loop Playback</label>
+              <label class="custom-toggle">
+                <input type="checkbox">
+                <div class="toggle-track"><div class="toggle-knob"></div></div>
+              </label>
+            </div>
+          </div>
+
+          <ion-button expand="block" fill="clear" style="--color: var(--ion-color-medium); margin-top: 8px;" onclick="closeSettings()">
+            Done
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- FAB in player view -->
+      <ion-fab vertical="bottom" horizontal="start" slot="fixed" style="margin-bottom: 16px; margin-left: 16px; z-index: 60;" id="playerFab">
+        <ion-fab-button class="danger-fab" size="small" onclick="confirmDelete()">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+    </div>
+
+    <!-- State toggles -->
+    <div class="state-toggles">
+      <button class="active" onclick="setState('normal')">Normal</button>
+      <button onclick="setState('empty')">Empty</button>
+      <button onclick="setState('playing')">Playing</button>
+    </div>
+  </div>
+
+  <script>
+    let isPlaying = true;
+
+    function setState(state) {
+      const normal = document.getElementById('normalState');
+      const empty = document.getElementById('emptyState');
+      const player = document.getElementById('playerView');
+      const fab = document.getElementById('deleteFab');
+      const contentArea = document.getElementById('contentArea');
+
+      normal.style.display = '';
+      empty.classList.remove('visible');
+      player.classList.remove('visible');
+      fab.style.display = '';
+      contentArea.style.overflow = '';
+
+      if (state === 'empty') {
+        normal.style.display = 'none';
+        empty.classList.add('visible');
+        fab.style.display = 'none';
+      } else if (state === 'playing') {
+        player.classList.add('visible');
+        fab.style.display = 'none';
+      }
+
+      document.querySelectorAll('.state-toggles button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function openPlayer(name) {
+      document.getElementById('playerView').classList.add('visible');
+      document.getElementById('deleteFab').style.display = 'none';
+      document.title = 'Lift-Mate — Playing ' + name;
+    }
+
+    function closePlayer() {
+      document.getElementById('playerView').classList.remove('visible');
+      document.getElementById('deleteFab').style.display = '';
+    }
+
+    function togglePlayPause() {
+      const icon = document.getElementById('playPauseIcon');
+      isPlaying = !isPlaying;
+      icon.setAttribute('name', isPlaying ? 'pause' : 'play');
+
+      // Simulate timeline animation when playing
+      if (isPlaying) {
+        animateTimeline();
+      }
+    }
+
+    let timelineAnim = null;
+    function animateTimeline() {
+      if (!isPlaying) return;
+      const slider = document.getElementById('timelineSlider');
+      let val = parseInt(slider.value);
+      val += 1;
+      if (val > 100) val = 0;
+      slider.value = val;
+      document.getElementById('currentTime').textContent = formatTime(val);
+      timelineAnim = setTimeout(animateTimeline, 100);
+    }
+
+    function formatTime(val) {
+      const totalSec = Math.floor(val / 100 * 32);
+      const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+      const s = String(totalSec % 60).padStart(2, '0');
+      return m + ':' + s;
+    }
+
+    function prevFrame() {
+      const slider = document.getElementById('timelineSlider');
+      slider.value = Math.max(0, parseInt(slider.value) - 5);
+      document.getElementById('currentTime').textContent = formatTime(parseInt(slider.value));
+    }
+
+    function nextFrame() {
+      const slider = document.getElementById('timelineSlider');
+      slider.value = Math.min(100, parseInt(slider.value) + 5);
+      document.getElementById('currentTime').textContent = formatTime(parseInt(slider.value));
+    }
+
+    function openSettings() {
+      document.getElementById('settingsModal').classList.add('visible');
+    }
+
+    function closeSettings(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('settingsModal').classList.remove('visible');
+    }
+
+    function selectSpeed(el, speed) {
+      document.querySelectorAll('.speed-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function confirmDelete() {
+      if (confirm('Delete all recordings?')) {
+        setState('empty');
+      }
+    }
+  </script>
+</body>
+</html>

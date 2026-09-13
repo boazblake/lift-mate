@@ -65,5 +65,6 @@ const checkWidth = (winW: number): number => {
 (model as Model).settings.displayType = getDisplayType(winW);
 
 checkWidth(winW);
+m.route.prefix = "";
 
 m.route(root, "/", routes(model as Model));
