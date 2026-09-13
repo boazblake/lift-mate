@@ -9,6 +9,9 @@ import fs from "fs";
 export default defineConfig(({ mode }) => {
   const isMobile = mode === "mobile";
   const isSSL = mode === "ssl";
+  const certKeyPath = "./.cert/key.pem";
+  const certPath = "./.cert/cert.pem";
+  const hasCertificates = fs.existsSync(certKeyPath) && fs.existsSync(certPath);
   console.log("Vite mode:", mode, "isSSL:", isSSL, "isMobile:", isMobile);
 
   const alias: Record<string, string> = {
@@ -97,10 +100,14 @@ export default defineConfig(({ mode }) => {
         ? {
             port: 8101,
             strictPort: true,
-            https: {
-              key: fs.readFileSync("./.cert/key.pem"),
-              cert: fs.readFileSync("./.cert/cert.pem"),
-            },
+            ...(hasCertificates
+              ? {
+                  https: {
+                    key: fs.readFileSync(certKeyPath),
+                    cert: fs.readFileSync(certPath),
+                  },
+                }
+              : {}),
           }
         : {
             host: "localhost",
