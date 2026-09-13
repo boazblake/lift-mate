@@ -30,6 +30,26 @@ export const getExRxExercise = (name: string) => byName.get(normalizeExerciseNam
 
 export const getExRxExerciseNames = () => exrx.exercises.map((exercise) => exercise.name);
 
+export const getExerciseAnalysisProfile = (name: string) => {
+  const normalizedName = normalizeExerciseName(name);
+  const key = normalizedName.includes("squat")
+    ? "squat"
+    : normalizedName.includes("lunge")
+      ? "lunge"
+      : normalizedName.includes("press")
+        ? "press"
+        : normalizedName.includes("deadlift") || normalizedName.includes("hinge") || normalizedName.includes("row")
+          ? "hinge"
+          : normalizedName.includes("pull") || normalizedName.includes("curl")
+            ? "pull"
+            : normalizedName.includes("plank") || normalizedName.includes("crunch") || normalizedName.includes("core")
+              ? "core"
+              : normalizedName.includes("jump") || normalizedName.includes("run") || normalizedName.includes("burpee")
+                ? "cardio"
+                : "generic";
+  return { key, display: name || "Ready" };
+};
+
 const fallbackCues: Record<string, string[]> = {
   squat: ["Brace your core.", "Keep knees tracking over toes.", "Control the descent."],
   "bench press": ["Keep shoulders packed.", "Lower with control.", "Drive through the floor and press evenly."],
