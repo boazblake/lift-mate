@@ -4,9 +4,6 @@ import model from "../model";
 import type { Model, DisplayType } from "../types";
 import "setimmediate";
 
-// Initialize PWA elements
-import { defineCustomElements } from "@ionic/core/loader";
-
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/core/css/core.css";
 //
@@ -96,7 +93,7 @@ const start = async () => {
   if (!root) throw new Error("Missing #app mount point");
 
   installErrorDiagnostics();
-  await defineCustomElements();
+  await import(/* @vite-ignore */ `${import.meta.env.BASE_URL}ionic.esm.js`);
 
   (model as Model).settings.displayType = getDisplayType(winW);
   checkWidth(winW);

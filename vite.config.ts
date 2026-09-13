@@ -3,6 +3,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import mkcert from "vite-plugin-mkcert";
 import legacy from "@vitejs/plugin-legacy";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 import path from "path";
 import fs from "fs";
 
@@ -78,6 +79,15 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
+      }),
+      viteStaticCopy({
+        targets: [
+          {
+            src: "node_modules/@ionic/core/dist/ionic/*",
+            dest: ".",
+            rename: { stripBase: true },
+          },
+        ],
       }),
       legacy({
         targets: ["ie >= 11"],
