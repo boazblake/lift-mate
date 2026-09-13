@@ -8,7 +8,7 @@ This document provides context for the `lift-mate` application, focusing on the 
 
 ## Feature Focus: Real-time Pose Estimation
 
-The current development focus is on implementing a real-time pose estimation feature, located under `src/pages/Pose/`. This feature utilizes Google's MediaPipe solutions to detect and render human pose, hand, and face landmarks on a live video feed.
+The current development focus is on implementing a real-time pose estimation feature, located under `src/features/pose/`. This feature utilizes Google's MediaPipe solutions to detect and render human pose, hand, and face landmarks on a live video feed.
 
 ### Key Technologies Used:
 
@@ -38,20 +38,20 @@ The real-time pose estimation feature is functional on both web and native mobil
 2.  **`render.service.ts` - `elements.context is not a function`:**
 
     - **Problem:** Initial implementation incorrectly assumed `elements.context` was a function, leading to a `TypeError`.
-    - **Resolution:** Modified `src/pages/Pose/store.ts` to include a `context` stream within the `elements` object. Updated `src/pages/Pose/render.service.ts` to correctly retrieve the 2D rendering context from the canvas element and store it in the `elements.context` stream.
+    - **Resolution:** Modified `src/features/pose/store.ts` to include a `context` stream within the `elements` object. Updated `src/features/pose/render.service.ts` to correctly retrieve the 2D rendering context from the canvas element and store it in the `elements.context` stream.
 
 3.  **No Landmarks Displayed:**
 
     - **Problem:** Although the `holistic.service` was initialized, video frames were not being continuously sent to the MediaPipe model for processing, resulting in no landmark data.
     - **Resolution:**
-      - Added a `sendFrames` asynchronous function to `src/pages/Pose/holistic.service.ts`. This function continuously sends video frames to the appropriate MediaPipe instance (native or web) for processing using `requestAnimationFrame`.
-      - Integrated the `holisticService.sendFrames()` call into `src/pages/Pose/PoseViewer.ts` when streaming begins.
+      - Added a `sendFrames` asynchronous function to `src/features/pose/holistic.service.ts`. This function continuously sends video frames to the appropriate MediaPipe instance (native or web) for processing using `requestAnimationFrame`.
+      - Integrated the `holisticService.sendFrames()` call into `src/features/pose/PoseViewer.ts` when streaming begins.
 
 4.  **Tiny Landmarks / Aspect Ratio Issues:**
 
     - **Problem:** Landmarks were appearing very small or distorted due to incorrect scaling.
     - **Resolution:**
-      - Modified the `draw` loop in `src/pages/Pose/render.service.ts` to dynamically set the canvas's `width` and `height` to match its `clientWidth` and `clientHeight`.
+      - Modified the `draw` loop in `src/features/pose/render.service.ts` to dynamically set the canvas's `width` and `height` to match its `clientWidth` and `clientHeight`.
       - Implemented logic to correctly transform landmark coordinates to account for the `object-fit: cover` styling of the video feed.
 
 5.  **"Selfie Mode" Mirroring:**
@@ -62,7 +62,7 @@ The real-time pose estimation feature is functional on both web and native mobil
 6.  **Missing Connection Lines:**
     - **Problem:** Only individual landmarks were drawn, without lines connecting them.
     - **Resolution:**
-      - Added a `drawConnectors` function to `src/pages/Pose/render.service.ts`.
+      - Added a `drawConnectors` function to `src/features/pose/render.service.ts`.
       - Integrated calls to `drawConnectors` for both pose and hand landmarks within the `draw` loop.
 
 ### Next Steps / Future Work:
@@ -78,7 +78,7 @@ The core real-time pose estimation and rendering are now in place. Potential nex
 
 You are an AI assistant tasked with continuing development on the `lift-mate` project. Your current focus is on the real-time pose estimation feature.
 
-- **Familiarize yourself with the project structure and the `src/pages/Pose/` directory.**
+- **Familiarize yourself with the project structure and the `src/features/pose/` directory.**
 - **Understand the roles of `render.service.ts`, `holistic.service.ts`, `store.ts`, and `PoseViewer.ts`.**
 - **Refer to the "Current State and Recent Development" section for a summary of recent changes and resolved issues.**
 - **When making changes, adhere to the existing coding style, conventions, and architectural patterns.**

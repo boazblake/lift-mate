@@ -1,5 +1,11 @@
 /node_modules/*
+node_modules/
+dist/
+build/
+out/
 /.direnv
 /.cert
 /.envrc
 /.env
+.env.*
+!.env.example
